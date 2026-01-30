@@ -1,0 +1,19 @@
+[Unit]
+Description=LPIC-1 Practice Filesystems
+Documentation=https://github.com/your-org/LPIC-1
+After=local-fs.target
+Wants=local-fs.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/opt/LPIC-1/environment/mount-practice-filesystems.sh
+ExecStop=/opt/LPIC-1/environment/unmount-practice-filesystems.sh
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=lpic1-filesystems
+
+[Install]
+WantedBy=multi-user.target

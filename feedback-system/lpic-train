@@ -1,0 +1,766 @@
+#!/bin/bash
+# LPIC-1 Interactive Training System
+# Learn, Practice, Sandbox, and Test your Linux skills
+# Usage: lpic-train <mode> [topic] [options]
+
+set -euo pipefail
+
+# Get script directory (resolve symlinks)
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+TRAINING_DIR="${SCRIPT_DIR}/training"
+LESSONS_DIR="${TRAINING_DIR}/lessons"
+EXERCISES_DIR="${TRAINING_DIR}/exercises"
+
+# Source common functions
+source "${TRAINING_DIR}/common.sh"
+
+# ============================================================================
+# Available Topics
+# ============================================================================
+
+declare -A TOPICS
+TOPICS=(
+    # Text Processing (103.2)
+    ["grep"]="Text searching and pattern matching"
+    ["sed"]="Stream editing and text transformation"
+    ["awk"]="Text processing and data extraction"
+
+    # File Operations (103.3, 104.5)
+    ["find"]="Finding files by various criteria"
+    ["tar"]="Archive creation and extraction"
+    ["permissions"]="File permissions (chmod, chown, umask)"
+
+    # Process Management (103.5)
+    ["processes"]="Process management (ps, kill, jobs, bg, fg, nice)"
+
+    # User Administration (107.1)
+    ["users"]="User and group management"
+
+    # Networking (109.x)
+    ["networking"]="Network configuration and diagnostics"
+
+    # Storage (104.x)
+    ["filesystems"]="Filesystem management (mount, df, du, fdisk)"
+
+    # Services (101.3)
+    ["systemd"]="Service management with systemctl and journalctl"
+)
+
+# Topic aliases
+declare -A TOPIC_ALIASES
+TOPIC_ALIASES=(
+    ["text"]="grep"
+    ["search"]="grep"
+    ["regex"]="grep"
+    ["stream"]="sed"
+    ["edit"]="sed"
+    ["data"]="awk"
+    ["archive"]="tar"
+    ["compress"]="tar"
+    ["chmod"]="permissions"
+    ["chown"]="permissions"
+    ["ps"]="processes"
+    ["kill"]="processes"
+    ["jobs"]="processes"
+    ["useradd"]="users"
+    ["usermod"]="users"
+    ["passwd"]="users"
+    ["ip"]="networking"
+    ["ss"]="networking"
+    ["ping"]="networking"
+    ["mount"]="filesystems"
+    ["df"]="filesystems"
+    ["fdisk"]="filesystems"
+    ["systemctl"]="systemd"
+    ["journalctl"]="systemd"
+)
+
+# ============================================================================
+# Usage Information
+# ============================================================================
+
+usage() {
+    cat << 'EOF'
+LPIC-1 Interactive Training System
+
+Usage: lpic-train <mode> [topic] [options]
+
+LEARNING MODES:
+  learn <topic>       Learn concepts with live examples
+  practice <topic>    Guided exercises with progressive hints
+  sandbox [topic]     Free experimentation with practice files
+  test <topic>        Timed assessment (no hints)
+
+MUSCLE MEMORY:
+  drill [topic]       Quick-fire recall drills (builds speed)
+  mix                 Interleaved practice (mixed topics)
+
+PROGRESS:
+  status              Show mastery levels for all topics
+  review              Practice topics needing improvement
+  smart               Smart review based on your weak areas
+  topics              List all available topics
+
+OPTIONS:
+  -n, --count N       Number of exercises/questions (default: 5)
+  -t, --timed         Enable timing
+  --no-hints          Disable hints in practice mode
+  -h, --help          Show this help
+
+QUICK START:
+  lpic-train learn grep        # Learn grep concepts and options
+  lpic-train practice grep     # Guided grep exercises with hints
+  lpic-train drill chmod       # Quick-fire chmod drills
+  lpic-train mix               # Mixed-topic practice
+  lpic-train sandbox           # Free experimentation mode
+  lpic-train test grep         # Timed assessment
+
+AVAILABLE TOPICS:
+  Text Processing:  grep, sed, awk
+  File Operations:  find, tar, permissions
+  Process Mgmt:     processes (ps, kill, jobs, bg, fg, nice)
+  User Admin:       users (useradd, usermod, groupadd, passwd)
+  Networking:       networking (ip, ss, dig, ping, traceroute)
+  Storage:          filesystems (mount, df, du, fdisk, lsblk)
+  Services:         systemd (systemctl, journalctl)
+
+LEARNING TIPS:
+  • Start with 'learn' to understand concepts
+  • Use 'practice' for guided exercises with hints
+  • Build speed with 'drill' for muscle memory
+  • Use 'mix' to improve retention across topics
+  • Check 'smart' for personalized recommendations
+EOF
+}
+
+# ============================================================================
+# Topic Resolution
+# ============================================================================
+
+resolve_topic() {
+    local input="${1:-}"
+
+    # Check if it's a direct topic
+    if [[ -n "${TOPICS[$input]:-}" ]]; then
+        echo "$input"
+        return 0
+    fi
+
+    # Check aliases
+    if [[ -n "${TOPIC_ALIASES[$input]:-}" ]]; then
+        echo "${TOPIC_ALIASES[$input]}"
+        return 0
+    fi
+
+    # Not found
+    return 1
+}
+
+list_topics() {
+    print_header "Available Training Topics"
+
+    echo -e "${BOLD}Text Processing (Objective 103.2):${NC}"
+    echo "  grep          Text searching and pattern matching"
+    echo "  sed           Stream editing and text transformation"
+    echo "  awk           Text processing and data extraction"
+    echo
+
+    echo -e "${BOLD}File Operations (Objectives 103.3, 104.5):${NC}"
+    echo "  find          Finding files by various criteria"
+    echo "  tar           Archive creation and extraction"
+    echo "  permissions   File permissions (chmod, chown, umask)"
+    echo
+
+    echo -e "${BOLD}Process Management (Objective 103.5):${NC}"
+    echo "  processes     ps, kill, jobs, bg, fg, nice, nohup"
+    echo
+
+    echo -e "${BOLD}User Administration (Objective 107.1):${NC}"
+    echo "  users         useradd, usermod, userdel, groupadd, passwd"
+    echo
+
+    echo -e "${BOLD}Networking (Objectives 109.1-109.4):${NC}"
+    echo "  networking    ip, ss, dig, ping, traceroute, netstat"
+    echo
+
+    echo -e "${BOLD}Storage (Objectives 104.1-104.3):${NC}"
+    echo "  filesystems   mount, umount, df, du, fdisk, mkfs, lsblk"
+    echo
+
+    echo -e "${BOLD}Service Management (Objective 101.3):${NC}"
+    echo "  systemd       systemctl, journalctl, system targets"
+    echo
+
+    echo -e "${DIM}Tip: You can also use command names as aliases:${NC}"
+    echo -e "${DIM}  lpic-train learn chmod → permissions lesson${NC}"
+    echo -e "${DIM}  lpic-train learn ps → processes lesson${NC}"
+}
+
+# ============================================================================
+# Mode: Learn
+# ============================================================================
+
+mode_learn() {
+    local topic="$1"
+
+    # Check if lesson exists
+    local lesson_file="${LESSONS_DIR}/${topic}.sh"
+    if [[ ! -f "$lesson_file" ]]; then
+        print_fail "Lesson not found for topic: $topic"
+        print_info "Available topics:"
+        list_topics
+        exit 1
+    fi
+
+    # Verify practice files exist
+    if ! check_practice_files; then
+        print_warn "Some examples may not work without practice files"
+        echo
+    fi
+
+    # Source and run the lesson
+    source "$lesson_file"
+    "lesson_${topic}"
+
+    # Record completion
+    record_lesson_complete "$topic"
+
+    # Suggest next step
+    echo
+    print_info "Ready to practice? Try:"
+    echo -e "  ${CYAN}lpic-train practice $topic${NC}"
+}
+
+# ============================================================================
+# Mode: Practice
+# ============================================================================
+
+mode_practice() {
+    local topic="$1"
+    local count="${2:-5}"
+    local no_hints="${3:-false}"
+
+    # Check if exercises exist
+    local exercise_file="${EXERCISES_DIR}/${topic}-exercises.sh"
+    if [[ ! -f "$exercise_file" ]]; then
+        print_fail "Exercises not found for topic: $topic"
+        print_info "Try learning first: lpic-train learn $topic"
+        exit 1
+    fi
+
+    # Verify practice files exist
+    if ! check_practice_files; then
+        print_fail "Practice files are required for exercises"
+        print_info "Run the setup script to create practice files"
+        exit 1
+    fi
+
+    # Source and run exercises
+    source "$exercise_file"
+
+    print_header "Practice: $topic"
+
+    local mastery
+    mastery=$(get_mastery_level "$topic")
+    echo -e "Current mastery: ${CYAN}$mastery${NC}"
+    echo
+
+    if [[ "$no_hints" == "true" ]]; then
+        echo -e "${YELLOW}Hints disabled${NC}"
+        export LPIC_NO_HINTS=1
+    fi
+
+    echo "Starting guided exercises..."
+    echo
+
+    # Run exercise function
+    "run_${topic}_exercises" "$count"
+
+    # Show updated mastery
+    echo
+    mastery=$(get_mastery_level "$topic")
+    echo -e "Updated mastery: ${CYAN}$mastery${NC}"
+
+    # Suggest next step
+    echo
+    print_info "Want to test without hints?"
+    echo -e "  ${CYAN}lpic-train test $topic${NC}"
+}
+
+# ============================================================================
+# Mode: Sandbox
+# ============================================================================
+
+mode_sandbox() {
+    local topic="${1:-}"
+
+    # Source sandbox module
+    source "${TRAINING_DIR}/sandbox.sh"
+
+    sandbox_mode "$topic"
+}
+
+# ============================================================================
+# Mode: Test
+# ============================================================================
+
+mode_test() {
+    local topic="$1"
+    local count="${2:-5}"
+    local timed="${3:-false}"
+
+    # Use skill-checker for testing
+    local skill_checker="${SCRIPT_DIR}/skill-checker.sh"
+    if [[ ! -f "$skill_checker" ]]; then
+        print_fail "skill-checker.sh not found"
+        exit 1
+    fi
+
+    local args=("session" "$topic" "-n" "$count")
+    if [[ "$timed" == "true" ]]; then
+        args+=("-t")
+    fi
+
+    # Export hint disable flag
+    export LPIC_NO_HINTS=1
+
+    exec bash "$skill_checker" "${args[@]}"
+}
+
+# ============================================================================
+# Mode: Status
+# ============================================================================
+
+mode_status() {
+    print_header "Training Status"
+
+    echo -e "${BOLD}Topic Mastery:${NC}"
+    echo
+
+    printf "  %-15s %-12s %s\n" "TOPIC" "MASTERY" "OBJECTIVE"
+    printf "  %-15s %-12s %s\n" "─────" "───────" "─────────"
+
+    for topic in "${!TOPICS[@]}"; do
+        local mastery
+        mastery=$(get_mastery_level "$topic")
+        local objective
+        objective=$(get_topic_objective "$topic")
+
+        local color="$NC"
+        case "$mastery" in
+            proficient) color="$GREEN" ;;
+            intermediate) color="$CYAN" ;;
+            practicing) color="$YELLOW" ;;
+            beginner) color="$YELLOW" ;;
+            novice) color="$DIM" ;;
+        esac
+
+        printf "  %-15s ${color}%-12s${NC} %s\n" "$topic" "$mastery" "$objective"
+    done | sort
+
+    echo
+
+    # Recommendations
+    print_info "Recommendations:"
+
+    # Find weakest topics
+    local weak_topics=()
+    for topic in "${!TOPICS[@]}"; do
+        local mastery
+        mastery=$(get_mastery_level "$topic")
+        if [[ "$mastery" == "novice" || "$mastery" == "beginner" ]]; then
+            weak_topics+=("$topic")
+        fi
+    done
+
+    if [[ ${#weak_topics[@]} -gt 0 ]]; then
+        echo "  Topics needing attention: ${weak_topics[*]}"
+        echo -e "  Try: ${CYAN}lpic-train learn ${weak_topics[0]}${NC}"
+    else
+        echo "  Great progress! Consider taking a full test."
+        echo -e "  Try: ${CYAN}lpic-train test all${NC}"
+    fi
+}
+
+# ============================================================================
+# Mode: Review
+# ============================================================================
+
+mode_review() {
+    print_header "Review Mode"
+
+    echo "Finding topics that need practice..."
+    echo
+
+    local review_topics=()
+
+    for topic in "${!TOPICS[@]}"; do
+        local mastery
+        mastery=$(get_mastery_level "$topic")
+        if [[ "$mastery" != "proficient" ]]; then
+            review_topics+=("$topic")
+        fi
+    done
+
+    if [[ ${#review_topics[@]} -eq 0 ]]; then
+        print_pass "All topics at proficient level!"
+        echo
+        echo "Consider testing yourself:"
+        echo -e "  ${CYAN}lpic-train test all${NC}"
+        return
+    fi
+
+    echo "Topics to review:"
+    for topic in "${review_topics[@]}"; do
+        local mastery
+        mastery=$(get_mastery_level "$topic")
+        echo "  - $topic ($mastery)"
+    done
+
+    echo
+    echo "Starting review session..."
+    echo
+
+    # Practice first weak topic
+    local first_topic="${review_topics[0]}"
+    mode_practice "$first_topic" 3 false
+}
+
+# ============================================================================
+# Mode: Drill (Quick-fire muscle memory)
+# ============================================================================
+
+mode_drill() {
+    local topic="${1:-all}"
+    local rounds="${2:-10}"
+
+    # Source learning helpers for drill functionality
+    local learning_helpers="${TRAINING_DIR}/learning-helpers.sh"
+    if [[ -f "$learning_helpers" ]]; then
+        source "$learning_helpers"
+    else
+        print_fail "Learning helpers not found"
+        exit 1
+    fi
+
+    print_header "Quick Drill: $topic"
+
+    echo -e "${CYAN}Build muscle memory with rapid-fire recall!${NC}"
+    echo -e "${DIM}Answer as fast as you can - speed builds automaticity.${NC}"
+    echo
+    echo "Format: Short answer questions about $topic"
+    echo "Rounds: $rounds"
+    echo
+    read -rp "Press Enter to start..."
+
+    run_quick_drill "$topic" "$rounds"
+}
+
+# ============================================================================
+# Mode: Mix (Interleaved practice)
+# ============================================================================
+
+mode_mix() {
+    local count="${1:-10}"
+
+    print_header "Interleaved Practice"
+
+    echo -e "${CYAN}Mixed-topic practice for better long-term retention!${NC}"
+    echo
+    echo "Research shows interleaved practice (mixing different topics)"
+    echo "leads to better transfer and retention than blocked practice."
+    echo
+    echo -e "${DIM}You'll get $count exercises from various topics.${NC}"
+    echo
+
+    # Source learning helpers
+    local learning_helpers="${TRAINING_DIR}/learning-helpers.sh"
+    [[ -f "$learning_helpers" ]] && source "$learning_helpers"
+
+    local topics_with_exercises=()
+
+    # Find topics that have exercise files
+    for file in "${EXERCISES_DIR}"/*-exercises.sh; do
+        if [[ -f "$file" ]]; then
+            local t
+            t=$(basename "$file" -exercises.sh)
+            topics_with_exercises+=("$t")
+        fi
+    done
+
+    if [[ ${#topics_with_exercises[@]} -eq 0 ]]; then
+        print_fail "No exercise files found"
+        exit 1
+    fi
+
+    local correct=0
+    local attempted=0
+    local current_topic=""
+
+    for ((i=1; i<=count; i++)); do
+        # Pick random topic
+        current_topic="${topics_with_exercises[$((RANDOM % ${#topics_with_exercises[@]}))]}"
+
+        echo
+        echo -e "${BOLD}━━━ Question $i of $count ━━━${NC}"
+        echo -e "${DIM}Topic: $current_topic${NC}"
+
+        # Source that topic's exercises
+        local exercise_file="${EXERCISES_DIR}/${current_topic}-exercises.sh"
+        source "$exercise_file"
+
+        # Get available exercises for this topic
+        local exercises=()
+        while IFS= read -r func; do
+            exercises+=("$func")
+        done < <(declare -F | awk '{print $3}' | grep "^exercise_${current_topic}")
+
+        if [[ ${#exercises[@]} -gt 0 ]]; then
+            # Pick random exercise
+            local random_exercise="${exercises[$((RANDOM % ${#exercises[@]}))]}"
+            if $random_exercise; then
+                ((correct++))
+            fi
+            ((attempted++))
+        fi
+
+        if [[ $i -lt $count ]]; then
+            echo
+            read -rp "Press Enter for next (q to quit)... " choice
+            [[ "$choice" == "q" ]] && break
+        fi
+    done
+
+    echo
+    print_header "Interleaved Session Complete"
+
+    local percent=0
+    [[ $attempted -gt 0 ]] && percent=$((correct * 100 / attempted))
+
+    echo "Score: $correct / $attempted ($percent%)"
+    echo
+
+    if [[ $percent -ge 80 ]]; then
+        print_pass "Excellent! You're building strong cross-topic skills."
+    elif [[ $percent -ge 60 ]]; then
+        print_warn "Good progress! Keep mixing topics to strengthen connections."
+    else
+        print_info "Focus on individual topics first, then return to mixed practice."
+    fi
+}
+
+# ============================================================================
+# Mode: Smart Review (Spaced repetition)
+# ============================================================================
+
+mode_smart_review() {
+    # Source learning helpers
+    local learning_helpers="${TRAINING_DIR}/learning-helpers.sh"
+    if [[ -f "$learning_helpers" ]]; then
+        source "$learning_helpers"
+    fi
+
+    print_header "Smart Review"
+
+    echo -e "${CYAN}Targeted practice based on your performance data!${NC}"
+    echo
+
+    # Show current weak areas
+    if type -t show_review_recommendation &>/dev/null; then
+        show_review_recommendation
+    else
+        echo "Progress tracking not available."
+        echo "Complete some exercises first!"
+        return
+    fi
+
+    echo
+    echo -e "${BOLD}Options:${NC}"
+    echo "  1. Practice suggested weak area"
+    echo "  2. Drill stale commands"
+    echo "  3. Full review session"
+    echo "  4. Return"
+    echo
+
+    read -rp "Choice [1-4]: " choice
+
+    case "$choice" in
+        1)
+            local suggested
+            suggested=$(suggest_review_topic 2>/dev/null) || suggested="grep"
+            mode_practice "$suggested" 5 false
+            ;;
+        2)
+            local stale_topic
+            stale_topic=$(suggest_review_topic 2>/dev/null) || stale_topic="grep"
+            mode_drill "$stale_topic" 10
+            ;;
+        3)
+            mode_review
+            ;;
+        *)
+            return
+            ;;
+    esac
+}
+
+# ============================================================================
+# Main Entry Point
+# ============================================================================
+
+main() {
+    local mode="${1:-}"
+    shift 2>/dev/null || true
+
+    # Default options
+    local topic=""
+    local count=5
+    local timed=false
+    local no_hints=false
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -n|--count)
+                count="$2"
+                shift 2
+                ;;
+            -t|--timed)
+                timed=true
+                shift
+                ;;
+            --no-hints)
+                no_hints=true
+                shift
+                ;;
+            -h|--help)
+                usage
+                exit 0
+                ;;
+            *)
+                if [[ -z "$topic" ]]; then
+                    topic="$1"
+                fi
+                shift
+                ;;
+        esac
+    done
+
+    case "$mode" in
+        learn)
+            if [[ -z "$topic" ]]; then
+                print_fail "Please specify a topic"
+                echo "Usage: lpic-train learn <topic>"
+                echo
+                list_topics
+                exit 1
+            fi
+            local resolved
+            resolved=$(resolve_topic "$topic") || {
+                print_fail "Unknown topic: $topic"
+                echo
+                list_topics
+                exit 1
+            }
+            mode_learn "$resolved"
+            ;;
+
+        practice)
+            if [[ -z "$topic" ]]; then
+                print_fail "Please specify a topic"
+                echo "Usage: lpic-train practice <topic>"
+                echo
+                list_topics
+                exit 1
+            fi
+            local resolved
+            resolved=$(resolve_topic "$topic") || {
+                print_fail "Unknown topic: $topic"
+                echo
+                list_topics
+                exit 1
+            }
+            mode_practice "$resolved" "$count" "$no_hints"
+            ;;
+
+        sandbox)
+            if [[ -n "$topic" ]]; then
+                local resolved
+                resolved=$(resolve_topic "$topic") || topic=""
+                topic="$resolved"
+            fi
+            mode_sandbox "$topic"
+            ;;
+
+        test)
+            if [[ -z "$topic" ]]; then
+                topic="all"
+            else
+                local resolved
+                resolved=$(resolve_topic "$topic") || {
+                    if [[ "$topic" != "all" ]]; then
+                        print_fail "Unknown topic: $topic"
+                        exit 1
+                    fi
+                }
+                topic="${resolved:-all}"
+            fi
+            mode_test "$topic" "$count" "$timed"
+            ;;
+
+        status)
+            mode_status
+            ;;
+
+        review)
+            mode_review
+            ;;
+
+        drill)
+            if [[ -z "$topic" ]]; then
+                topic="all"
+            else
+                local resolved
+                resolved=$(resolve_topic "$topic") || topic="all"
+                topic="$resolved"
+            fi
+            mode_drill "$topic" "$count"
+            ;;
+
+        mix|interleaved)
+            mode_mix "$count"
+            ;;
+
+        smart|smart-review)
+            mode_smart_review
+            ;;
+
+        topics|list)
+            list_topics
+            ;;
+
+        -h|--help|help)
+            usage
+            ;;
+
+        "")
+            usage
+            ;;
+
+        *)
+            # Maybe user forgot mode - assume 'learn' if it looks like a topic
+            local resolved
+            if resolved=$(resolve_topic "$mode"); then
+                echo -e "${DIM}Tip: Use 'lpic-train learn $mode' for explicit mode${NC}"
+                echo
+                mode_learn "$resolved"
+            else
+                print_fail "Unknown command: $mode"
+                usage
+                exit 1
+            fi
+            ;;
+    esac
+}
+
+main "$@"
