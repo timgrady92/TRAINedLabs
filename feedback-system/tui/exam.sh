@@ -9,7 +9,12 @@ TUI_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FEEDBACK_DIR="$(dirname "$TUI_DIR")"
 
 # Source dependencies (if not already sourced)
-[[ -z "${TUI_NC:-}" ]] && source "${TUI_DIR}/widgets.sh"
+if [[ -z "${TUI_NC:-}" ]]; then
+    if ! source "${TUI_DIR}/widgets.sh"; then
+        echo "ERROR: Failed to load widgets.sh" >&2
+        exit 1
+    fi
+fi
 
 # Configuration
 LPIC_DIR="/opt/LPIC-1/data"
@@ -240,6 +245,9 @@ SQL
         local name="${exam_id#exam-}"
         name="${name%-*}"  # Remove timestamp portion
 
+        # Validate score is numeric
+        [[ ! "$score" =~ ^[0-9]+$ ]] && score=0
+
         local result="FAIL"
         if [[ $score -ge 65 ]]; then
             result="PASS"
@@ -253,13 +261,14 @@ SQL
         ((total_score += score))
     done <<< "$results"
 
-    if [[ $total_exams -gt 0 ]]; then
+    if [[ "$total_exams" =~ ^[0-9]+$ ]] && [[ $total_exams -gt 0 ]]; then
         local avg_score=$((total_score / total_exams))
+        local pass_rate=$((passed * 100 / total_exams))
         text+="\n"
         text+="Summary:\n"
         text+="  Exams taken: $total_exams\n"
         text+="  Average score: $avg_score%\n"
-        text+="  Pass rate: $passed/$total_exams ($((passed * 100 / total_exams))%)\n"
+        text+="  Pass rate: $passed/$total_exams (${pass_rate}%)\n"
     fi
 
     tui_textbox "Exam History" "$text" 22 60

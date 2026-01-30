@@ -369,6 +369,40 @@ install_packages() {
     fi
 
     log_success "All critical commands available"
+
+    # Optional: Install Gum for modern TUI (Charm.sh)
+    install_gum_optional
+}
+
+# Install Gum (modern TUI) from Charm repository
+install_gum_optional() {
+    log_info "Checking for modern TUI support (gum)..."
+
+    if command -v gum &>/dev/null; then
+        log_success "Gum already installed: $(gum --version 2>/dev/null || echo 'unknown version')"
+        return 0
+    fi
+
+    log_info "Installing Gum for modern terminal UI..."
+
+    # Add Charm repository
+    if [[ ! -f /etc/apt/sources.list.d/charm.list ]]; then
+        mkdir -p /etc/apt/keyrings
+        if curl -fsSL https://repo.charm.sh/apt/gpg.key | gpg --dearmor -o /etc/apt/keyrings/charm.gpg 2>/dev/null; then
+            echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" > /etc/apt/sources.list.d/charm.list
+            apt-get update -qq 2>/dev/null || true
+        else
+            log_warn "Could not add Charm repository, skipping Gum installation"
+            return 0
+        fi
+    fi
+
+    # Install gum
+    if apt-get install -y -qq gum >> "$LOG_FILE" 2>&1; then
+        log_success "Gum installed - modern TUI enabled"
+    else
+        log_warn "Gum installation failed (optional) - falling back to dialog"
+    fi
 }
 
 # ============================================================================

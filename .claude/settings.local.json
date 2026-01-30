@@ -9,7 +9,13 @@
       "Bash(chmod:*)",
       "Bash(ls:*)",
       "Bash(bash -n:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(git -C /home/student/TRAINedLabs diff feedback-system/tui/widgets.sh)",
+      "Bash(/home/student/TRAINedLabs/test-gum-integration.sh)",
+      "Bash(bash:*)",
+      "Bash(for f in feedback-system/tui/*.sh test-gum-integration.sh)",
+      "Bash(do echo -n \"Checking $f... \")",
+      "Bash(done)"
     ]
   }
 }

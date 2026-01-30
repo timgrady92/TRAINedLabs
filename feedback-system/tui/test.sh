@@ -11,7 +11,12 @@ TRAINING_DIR="${FEEDBACK_DIR}/training"
 EXERCISES_DIR="${TRAINING_DIR}/exercises"
 
 # Source dependencies (if not already sourced)
-[[ -z "${TUI_NC:-}" ]] && source "${TUI_DIR}/widgets.sh"
+if [[ -z "${TUI_NC:-}" ]]; then
+    if ! source "${TUI_DIR}/widgets.sh"; then
+        echo "ERROR: Failed to load widgets.sh" >&2
+        exit 1
+    fi
+fi
 
 # ============================================================================
 # Topic Descriptions

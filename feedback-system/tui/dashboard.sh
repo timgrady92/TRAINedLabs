@@ -10,8 +10,18 @@ FEEDBACK_DIR="$(dirname "$TUI_DIR")"
 TRAINING_DIR="${FEEDBACK_DIR}/training"
 
 # Source dependencies (if not already sourced)
-[[ -z "${TUI_NC:-}" ]] && source "${TUI_DIR}/widgets.sh"
-[[ -z "${LPIC_DIR:-}" ]] && source "${TRAINING_DIR}/common.sh"
+if [[ -z "${TUI_NC:-}" ]]; then
+    if ! source "${TUI_DIR}/widgets.sh"; then
+        echo "ERROR: Failed to load widgets.sh" >&2
+        exit 1
+    fi
+fi
+if [[ -z "${LPIC_DIR:-}" ]]; then
+    if ! source "${TRAINING_DIR}/common.sh"; then
+        echo "ERROR: Failed to load common.sh" >&2
+        exit 1
+    fi
+fi
 
 # Configuration
 LPIC_DIR="/opt/LPIC-1/data"
@@ -148,6 +158,12 @@ build_dashboard_text() {
 
     while IFS='|' read -r topic total_obj done_obj; do
         [[ -z "$topic" ]] && continue
+        # Validate numeric values and prevent division by zero
+        if [[ ! "$total_obj" =~ ^[0-9]+$ ]] || [[ "$total_obj" -eq 0 ]]; then
+            total_obj=1
+            done_obj=0
+        fi
+        [[ ! "$done_obj" =~ ^[0-9]+$ ]] && done_obj=0
         local topic_pct=$((done_obj * 100 / total_obj))
         local mini_bar=""
         local mini_filled=$((10 * done_obj / total_obj))
@@ -165,6 +181,10 @@ build_dashboard_text() {
         output+="==============\n"
         while IFS='|' read -r cmd successes attempts; do
             [[ -z "$cmd" ]] && continue
+            # Validate numeric values
+            [[ ! "$successes" =~ ^[0-9]+$ ]] && successes=0
+            [[ ! "$attempts" =~ ^[0-9]+$ ]] && attempts=1
+            [[ "$attempts" -eq 0 ]] && attempts=1
             local rate=$((successes * 100 / attempts))
             output+="$cmd: $successes/$attempts ($rate%)\n"
         done <<< "$weak_areas"
@@ -242,6 +262,10 @@ show_topic_details() {
     local items=()
     while IFS='|' read -r topic total_obj done_obj; do
         [[ -z "$topic" ]] && continue
+        # Validate numeric values and prevent division by zero
+        [[ ! "$total_obj" =~ ^[0-9]+$ ]] && total_obj=1
+        [[ ! "$done_obj" =~ ^[0-9]+$ ]] && done_obj=0
+        [[ "$total_obj" -eq 0 ]] && total_obj=1
         local pct=$((done_obj * 100 / total_obj))
         items+=("$topic" "$done_obj/$total_obj complete ($pct%)")
     done <<< "$topic_data"
@@ -258,8 +282,12 @@ show_topic_details() {
 show_topic_objectives() {
     local topic="$1"
 
+    # Escape single quotes to prevent SQL injection
+    local topic_safe
+    topic_safe=$(printf '%s' "$topic" | sed "s/'/''/g")
+
     local objectives
-    objectives=$(sqlite3 "$DB_FILE" "SELECT number, title, completed, weight FROM objectives WHERE topic='$topic' ORDER BY number;")
+    objectives=$(sqlite3 "$DB_FILE" "SELECT number, title, completed, weight FROM objectives WHERE topic='$topic_safe' ORDER BY number;")
 
     local text="Objectives for Topic $topic\n"
     text+="================================\n\n"
@@ -295,6 +323,10 @@ show_weak_areas() {
 
     while IFS='|' read -r cmd successes attempts; do
         [[ -z "$cmd" ]] && continue
+        # Validate numeric values and prevent division by zero
+        [[ ! "$successes" =~ ^[0-9]+$ ]] && successes=0
+        [[ ! "$attempts" =~ ^[0-9]+$ ]] && attempts=1
+        [[ "$attempts" -eq 0 ]] && attempts=1
         local rate=$((successes * 100 / attempts))
         text+=$(printf "%-15s %d/%-3d      %d%%\n" "$cmd" "$successes" "$attempts" "$rate")
         text+="\n"

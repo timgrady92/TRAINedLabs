@@ -25,19 +25,32 @@ if [[ ! -f "${TRAINING_DIR}/common.sh" ]]; then
 fi
 
 # Source dependencies (widgets.sh sources theme.sh)
-source "${TUI_DIR}/widgets.sh"
-source "${TRAINING_DIR}/common.sh"
+if ! source "${TUI_DIR}/widgets.sh"; then
+    echo "ERROR: Failed to load widgets.sh" >&2
+    exit 1
+fi
+if ! source "${TRAINING_DIR}/common.sh"; then
+    echo "ERROR: Failed to load common.sh" >&2
+    exit 1
+fi
 
 # Configuration
-LPIC_DIR="/opt/LPIC-1/data"
+LPIC_DIR="${LPIC_DIR:-/opt/LPIC-1/data}"
 DB_FILE="${LPIC_DIR}/progress.db"
+
+# Check for sqlite3 availability
+DB_AVAILABLE=true
+if ! command -v sqlite3 &>/dev/null; then
+    echo "Warning: sqlite3 not found, progress tracking disabled" >&2
+    DB_AVAILABLE=false
+fi
 
 # ============================================================================
 # Progress Summary
 # ============================================================================
 
 get_progress_summary() {
-    if [[ ! -f "$DB_FILE" ]]; then
+    if [[ "$DB_AVAILABLE" != "true" ]] || [[ ! -f "$DB_FILE" ]]; then
         echo "0|0|0"
         return
     fi
@@ -96,7 +109,7 @@ show_main_menu() {
             "challenges" "Break/fix scenarios" \
             "exam"       "Timed LPIC-1 simulation" \
             "settings"   "Configure preferences" \
-            "quit"       "Exit training platform")
+            "quit"       "Exit training platform") || choice="quit"
     else
         choice=$(tui_menu "$title ($percent% complete)" 20 60 \
             "dashboard"  "View progress & recommendations" \
@@ -107,9 +120,10 @@ show_main_menu() {
             "challenges" "Break/fix scenarios" \
             "exam"       "Timed LPIC-1 simulation" \
             "settings"   "Configure preferences" \
-            "quit"       "Exit training platform")
+            "quit"       "Exit training platform") || choice="quit"
     fi
 
+    [[ -z "$choice" ]] && choice="quit"
     echo "$choice"
 }
 

@@ -29,6 +29,20 @@ _detect_tui_tools() {
 }
 _detect_tui_tools
 
+# Validate environment for TUI operations
+_validate_environment() {
+    # Check TERM variable
+    if [[ -z "${TERM:-}" ]] || [[ "$TERM" == "dumb" ]]; then
+        echo "Warning: TERM not set or is 'dumb', output may be degraded" >&2
+    fi
+
+    # Check for sqlite3 (commonly used by the training system)
+    if ! command -v sqlite3 &>/dev/null; then
+        echo "Warning: sqlite3 not found, progress tracking may be disabled" >&2
+    fi
+}
+_validate_environment
+
 # ============================================================================
 # UTF-8 Detection - ASCII fallback for non-UTF-8 terminals
 # ============================================================================
@@ -57,12 +71,14 @@ fi
 
 # Check if any TUI tool is available
 tui_available() {
-    [[ -n "$HAS_DIALOG" || -n "$HAS_WHIPTAIL" ]]
+    [[ -n "$HAS_GUM" || -n "$HAS_DIALOG" || -n "$HAS_WHIPTAIL" ]]
 }
 
 # Get the best available TUI tool
 tui_tool() {
-    if [[ -n "$HAS_DIALOG" ]]; then
+    if [[ -n "$HAS_GUM" ]]; then
+        echo "gum"
+    elif [[ -n "$HAS_DIALOG" ]]; then
         echo "dialog"
     elif [[ -n "$HAS_WHIPTAIL" ]]; then
         echo "whiptail"
@@ -99,10 +115,26 @@ tui_menu() {
     shift 3
     local items=("$@")
 
+    # Validate tag/desc pairs
+    if (( ${#items[@]} % 2 != 0 )); then
+        echo "Error: tui_menu requires tag/desc pairs" >&2
+        return 1
+    fi
+
+    # Check for TTY availability
+    if [[ ! -t 0 ]] && [[ ! -c /dev/tty ]]; then
+        echo "Error: No TTY available for interactive input" >&2
+        return 1
+    fi
+
     local menu_height=$((height - 7))
     [[ $menu_height -lt 1 ]] && menu_height=10
 
-    if [[ -n "$HAS_DIALOG" ]]; then
+    # Gum provides modern, styled menus
+    if [[ -n "$HAS_GUM" ]]; then
+        _gum_menu "$title" "${items[@]}"
+        return $?
+    elif [[ -n "$HAS_DIALOG" ]]; then
         dialog --clear --title "$title" \
             --menu "Select an option:" "$height" "$width" "$menu_height" \
             "${items[@]}" 3>&1 1>&2 2>&3
@@ -118,15 +150,56 @@ tui_menu() {
     fi
 }
 
+# Gum-based menu with modern styling
+_gum_menu() {
+    local title="$1"
+    shift
+    local items=("$@")
+
+    # Build display options: "tag - description"
+    local display_opts=()
+    local tags=()
+    local i=0
+    while [[ $i -lt ${#items[@]} ]]; do
+        local tag="${items[$i]}"
+        local desc="${items[$((i+1))]}"
+        tags+=("$tag")
+        display_opts+=("$tag  │  $desc")
+        ((i+=2))
+    done
+
+    # Show styled header (to stderr so it doesn't pollute the return value)
+    echo >&2
+    gum style \
+        --foreground 33 --border-foreground 33 \
+        --border rounded --padding "0 2" --margin "0 0 1 0" \
+        "$title" >&2
+
+    # Show the menu with gum choose
+    local selection
+    selection=$(printf '%s\n' "${display_opts[@]}" | gum choose \
+        --cursor.foreground="214" \
+        --selected.foreground="33" \
+        --header="" \
+        --cursor="▸ " \
+        --height=15) || return 1
+
+    # Extract the tag from selection (everything before the │)
+    local selected_tag
+    selected_tag=$(echo "$selection" | sed 's/  │.*//')
+    echo "$selected_tag"
+    return 0
+}
+
 # Fallback menu using select
 _fallback_menu() {
     local title="$1"
     shift
     local items=("$@")
 
-    echo
-    echo -e "${TUI_BOLD}${TUI_CYAN}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE} $title ${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_NC}"
-    echo
+    echo >&2
+    echo -e "${TUI_BOLD}${TUI_CYAN}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE} $title ${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_NC}" >&2
+    echo >&2
 
     # Build options array (tags only)
     local tags=()
@@ -138,19 +211,19 @@ _fallback_menu() {
         ((i+=2))
     done
 
-    # Display numbered menu
+    # Display numbered menu (to stderr)
     for i in "${!tags[@]}"; do
-        printf "  ${TUI_CYAN}%2d)${TUI_NC} %-15s %s\n" "$((i+1))" "${tags[$i]}" "${descs[$i]}"
+        printf "  ${TUI_CYAN}%2d)${TUI_NC} %-15s %s\n" "$((i+1))" "${tags[$i]}" "${descs[$i]}" >&2
     done
-    echo
-    printf "  ${TUI_DIM} 0) Cancel/Back${TUI_NC}\n"
-    echo
+    echo >&2
+    printf "  ${TUI_DIM} 0) Cancel/Back${TUI_NC}\n" >&2
+    echo >&2
 
     # Get selection
     local choice
     while true; do
-        echo -en "Enter choice [0-${#tags[@]}]: "
-        read -r choice
+        echo -en "Enter choice [0-${#tags[@]}]: " >&2
+        read -r choice || return 1
         if [[ "$choice" == "0" || "$choice" == "q" || "$choice" == "Q" ]]; then
             return 1
         fi
@@ -158,7 +231,7 @@ _fallback_menu() {
             echo "${tags[$((choice-1))]}"
             return 0
         fi
-        echo "Invalid choice. Please enter a number between 0 and ${#tags[@]}."
+        echo "Invalid choice. Please enter a number between 0 and ${#tags[@]}." >&2
     done
 }
 
@@ -176,10 +249,26 @@ tui_checklist() {
     shift 3
     local items=("$@")
 
+    # Validate tag/desc/state triplets
+    if (( ${#items[@]} % 3 != 0 )); then
+        echo "Error: tui_checklist requires tag/desc/state triplets" >&2
+        return 1
+    fi
+
+    # Check for TTY availability
+    if [[ ! -t 0 ]] && [[ ! -c /dev/tty ]]; then
+        echo "Error: No TTY available for interactive input" >&2
+        return 1
+    fi
+
     local list_height=$((height - 7))
     [[ $list_height -lt 1 ]] && list_height=10
 
-    if [[ -n "$HAS_DIALOG" ]]; then
+    # Gum provides modern multi-select
+    if [[ -n "$HAS_GUM" ]]; then
+        _gum_checklist "$title" "${items[@]}"
+        return $?
+    elif [[ -n "$HAS_DIALOG" ]]; then
         dialog --clear --title "$title" \
             --checklist "Select items (space to toggle):" "$height" "$width" "$list_height" \
             "${items[@]}" 3>&1 1>&2 2>&3
@@ -195,15 +284,69 @@ tui_checklist() {
     fi
 }
 
+# Gum-based checklist with modern styling
+_gum_checklist() {
+    local title="$1"
+    shift
+    local items=("$@")
+
+    # Build display options and track defaults
+    local display_opts=()
+    local tags=()
+    local defaults=()
+    local i=0
+    while [[ $i -lt ${#items[@]} ]]; do
+        local tag="${items[$i]}"
+        local desc="${items[$((i+1))]}"
+        local state="${items[$((i+2))]}"
+        tags+=("$tag")
+        display_opts+=("$tag  │  $desc")
+        [[ "$state" == "on" ]] && defaults+=("$tag  │  $desc")
+        ((i+=3))
+    done
+
+    # Show styled header (to stderr so it doesn't pollute the return value)
+    echo >&2
+    gum style \
+        --foreground 33 --border-foreground 33 \
+        --border rounded --padding "0 2" --margin "0 0 1 0" \
+        "$title" >&2
+
+    # Build selected args for defaults
+    local selected_args=()
+    for def in "${defaults[@]}"; do
+        selected_args+=("--selected=$def")
+    done
+
+    # Show the checklist with gum choose --no-limit
+    local selection
+    selection=$(printf '%s\n' "${display_opts[@]}" | gum choose \
+        --no-limit \
+        --cursor.foreground="214" \
+        --selected.foreground="34" \
+        --cursor="▸ " \
+        --header="Space to toggle, Enter to confirm" \
+        "${selected_args[@]}" \
+        --height=15) || return 1
+
+    # Extract tags from selections
+    local result=()
+    while IFS= read -r line; do
+        [[ -n "$line" ]] && result+=("$(echo "$line" | sed 's/  │.*//')")
+    done <<< "$selection"
+    echo "${result[*]}"
+    return 0
+}
+
 _fallback_checklist() {
     local title="$1"
     shift
     local items=("$@")
 
-    echo
-    echo -e "${TUI_BOLD}${TUI_CYAN}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE} $title ${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_NC}"
-    echo "Enter numbers separated by spaces (e.g., 1 3 5)"
-    echo
+    echo >&2
+    echo -e "${TUI_BOLD}${TUI_CYAN}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE} $title ${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_NC}" >&2
+    echo "Enter numbers separated by spaces (e.g., 1 3 5)" >&2
+    echo >&2
 
     # Build options array
     local tags=()
@@ -217,18 +360,18 @@ _fallback_checklist() {
         ((i+=3))
     done
 
-    # Display numbered list
+    # Display numbered list (to stderr)
     for i in "${!tags[@]}"; do
         local marker="[ ]"
         [[ "${states[$i]}" == "on" ]] && marker="[*]"
-        printf "  ${TUI_CYAN}%2d)${TUI_NC} %s %-15s %s\n" "$((i+1))" "$marker" "${tags[$i]}" "${descs[$i]}"
+        printf "  ${TUI_CYAN}%2d)${TUI_NC} %s %-15s %s\n" "$((i+1))" "$marker" "${tags[$i]}" "${descs[$i]}" >&2
     done
-    echo
+    echo >&2
 
     # Get selection
     local choice
-    echo -en "Enter choices (or Enter for defaults): "
-    read -r choice
+    echo -en "Enter choices (or Enter for defaults): " >&2
+    read -r choice || return 1
 
     if [[ -z "$choice" ]]; then
         # Return defaults
@@ -262,17 +405,34 @@ tui_msgbox() {
     local height="${3:-10}"
     local width="${4:-50}"
 
-    if [[ -n "$HAS_DIALOG" ]]; then
+    # Check for TTY availability
+    if [[ ! -t 0 ]] && [[ ! -c /dev/tty ]]; then
+        echo "Error: No TTY available for interactive input" >&2
+        return 1
+    fi
+
+    if [[ -n "$HAS_GUM" ]]; then
+        echo >&2
+        gum style \
+            --foreground 33 --border-foreground 33 \
+            --border rounded --padding "1 2" --margin "0 0 1 0" \
+            --bold "$title" >&2
+        echo "$message" | gum format >&2
+        echo >&2
+        # Show a styled prompt and wait for Enter
+        gum style --foreground 245 --italic "Press Enter to continue..." >&2
+        read -r _ </dev/tty 2>/dev/null || read -r _
+    elif [[ -n "$HAS_DIALOG" ]]; then
         dialog --clear --title "$title" --msgbox "$message" "$height" "$width"
     elif [[ -n "$HAS_WHIPTAIL" ]]; then
         whiptail --title "$title" --msgbox "$message" "$height" "$width"
     else
-        echo
-        echo -e "${TUI_BOLD}${TUI_CYAN}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE} $title ${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_NC}"
-        echo
-        echo -e "$message"
-        echo
-        echo -en "Press Enter to continue..."
+        echo >&2
+        echo -e "${TUI_BOLD}${TUI_CYAN}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE} $title ${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_NC}" >&2
+        echo >&2
+        echo -e "$message" >&2
+        echo >&2
+        echo -en "Press Enter to continue..." >&2
         read -r _
     fi
 }
@@ -290,8 +450,26 @@ tui_yesno() {
     local height="${3:-8}"
     local width="${4:-50}"
 
+    # Check for TTY availability
+    if [[ ! -t 0 ]] && [[ ! -c /dev/tty ]]; then
+        echo "Error: No TTY available for interactive input" >&2
+        return 1
+    fi
+
     if [[ -n "$HAS_GUM" ]]; then
-        gum confirm "$question" && return 0 || return 1
+        echo >&2
+        gum style \
+            --foreground 33 --border-foreground 33 \
+            --border rounded --padding "0 2" --margin "0 0 1 0" \
+            --bold "$title" >&2
+        # Display multiline question text first, then simple confirm prompt
+        echo -e "$question" | gum format >&2
+        echo >&2
+        gum confirm "Proceed?" \
+            --affirmative="Yes" --negative="No" \
+            --prompt.foreground="255" \
+            --selected.background="33" \
+            --unselected.foreground="245" && return 0 || return 1
     elif [[ -n "$HAS_DIALOG" ]]; then
         dialog --clear --title "$title" --yesno "$question" "$height" "$width"
         return $?
@@ -299,10 +477,10 @@ tui_yesno() {
         whiptail --title "$title" --yesno "$question" "$height" "$width"
         return $?
     else
-        echo
-        echo -e "${TUI_BOLD}$title${TUI_NC}"
+        echo >&2
+        echo -e "${TUI_BOLD}$title${TUI_NC}" >&2
         local response
-        echo -en "$question [y/N] "
+        echo -en "$question [y/N] " >&2
         read -r response
         [[ "$response" =~ ^[Yy] ]] && return 0 || return 1
     fi
@@ -322,8 +500,25 @@ tui_input() {
     local height="${4:-8}"
     local width="${5:-50}"
 
+    # Check for TTY availability
+    if [[ ! -t 0 ]] && [[ ! -c /dev/tty ]]; then
+        echo "Error: No TTY available for interactive input" >&2
+        return 1
+    fi
+
     if [[ -n "$HAS_GUM" ]]; then
-        gum input --placeholder "$prompt" --value "$default"
+        echo >&2
+        gum style \
+            --foreground 33 --border-foreground 33 \
+            --border rounded --padding "0 2" --margin "0 0 1 0" \
+            --bold "$title" >&2
+        gum input \
+            --placeholder "$prompt" \
+            --value "$default" \
+            --prompt "▸ " \
+            --prompt.foreground="214" \
+            --cursor.foreground="33" \
+            --width 50
         return $?
     elif [[ -n "$HAS_DIALOG" ]]; then
         dialog --clear --title "$title" --inputbox "$prompt" "$height" "$width" "$default" 3>&1 1>&2 2>&3
@@ -332,15 +527,15 @@ tui_input() {
         whiptail --title "$title" --inputbox "$prompt" "$height" "$width" "$default" 3>&1 1>&2 2>&3
         return $?
     else
-        echo
-        echo -e "${TUI_BOLD}$title${TUI_NC}"
+        echo >&2
+        echo -e "${TUI_BOLD}$title${TUI_NC}" >&2
         local input
         if [[ -n "$default" ]]; then
-            echo -en "$prompt [$default]: "
+            echo -en "$prompt [$default]: " >&2
             read -r input
             echo "${input:-$default}"
         else
-            echo -en "$prompt: "
+            echo -en "$prompt: " >&2
             read -r input
             echo "$input"
         fi
@@ -404,7 +599,12 @@ tui_infobox() {
     local height="${3:-5}"
     local width="${4:-40}"
 
-    if [[ -n "$HAS_DIALOG" ]]; then
+    if [[ -n "$HAS_GUM" ]]; then
+        gum style \
+            --foreground 245 --border-foreground 245 \
+            --border rounded --padding "0 1" \
+            --italic "$message"
+    elif [[ -n "$HAS_DIALOG" ]]; then
         dialog --title "$title" --infobox "$message" "$height" "$width"
     elif [[ -n "$HAS_WHIPTAIL" ]]; then
         # whiptail doesn't have infobox, use msgbox with short timeout
@@ -425,7 +625,12 @@ tui_spin() {
     shift
 
     if [[ -n "$HAS_GUM" ]]; then
-        gum spin --spinner dot --title "$title" -- "$@"
+        gum spin \
+            --spinner dot \
+            --spinner.foreground="214" \
+            --title "$title" \
+            --title.foreground="33" \
+            -- "$@"
     else
         echo -n "$title "
         "$@" &
@@ -445,7 +650,83 @@ tui_spin() {
 }
 
 # ============================================================================
-# Fuzzy Search Widget (using fzf if available)
+# Styled Output Helpers (Gum-enhanced)
+# ============================================================================
+
+# Display a styled banner/title
+# Usage: tui_banner "Welcome to LPIC-1 Training"
+tui_banner() {
+    local text="$1"
+    if [[ -n "$HAS_GUM" ]]; then
+        gum style \
+            --foreground 33 --border-foreground 33 \
+            --border double --padding "1 4" --margin "1" \
+            --bold --align center \
+            "$text"
+    else
+        echo
+        echo -e "${TUI_BOLD}${TUI_CYAN}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_NC}"
+        echo -e "${TUI_BOLD}  $text${TUI_NC}"
+        echo -e "${TUI_BOLD}${TUI_CYAN}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_NC}"
+        echo
+    fi
+}
+
+# Display styled key-value info
+# Usage: tui_info "Status" "Active"
+tui_info() {
+    local key="$1"
+    local value="$2"
+    if [[ -n "$HAS_GUM" ]]; then
+        echo "$(gum style --foreground 245 "$key:") $(gum style --foreground 255 --bold "$value")"
+    else
+        echo -e "${TUI_DIM}$key:${TUI_NC} ${TUI_BOLD}$value${TUI_NC}"
+    fi
+}
+
+# Display a styled list with bullet points
+# Usage: tui_list "Item 1" "Item 2" "Item 3"
+tui_list() {
+    for item in "$@"; do
+        if [[ -n "$HAS_GUM" ]]; then
+            echo "  $(gum style --foreground 214 "▸") $item"
+        else
+            echo -e "  ${TUI_CYAN}${TUI_SYM_BULLET}${TUI_NC} $item"
+        fi
+    done
+}
+
+# Display a warning/notice box
+# Usage: tui_notice "warning" "This action cannot be undone"
+tui_notice() {
+    local type="$1"
+    local message="$2"
+    local color icon
+
+    case "$type" in
+        warning|warn)  color="220"; icon="⚠" ;;
+        error)         color="196"; icon="✗" ;;
+        success)       color="34";  icon="✓" ;;
+        info|*)        color="33";  icon="ℹ" ;;
+    esac
+
+    if [[ -n "$HAS_GUM" ]]; then
+        gum style \
+            --foreground "$color" --border-foreground "$color" \
+            --border rounded --padding "0 2" --margin "1 0" \
+            "$icon $message"
+    else
+        case "$type" in
+            warning|warn) echo -e "${TUI_YELLOW}${icon} $message${TUI_NC}" ;;
+            error)        echo -e "${TUI_RED}${icon} $message${TUI_NC}" ;;
+            success)      echo -e "${TUI_GREEN}${icon} $message${TUI_NC}" ;;
+            *)            echo -e "${TUI_CYAN}${icon} $message${TUI_NC}" ;;
+        esac
+    fi
+}
+
+# ============================================================================
+# Fuzzy Search Widget (using gum filter or fzf)
 # ============================================================================
 
 # Fuzzy search through options
@@ -454,7 +735,15 @@ tui_fzf() {
     local prompt="${1:-Select:}"
     local preview_cmd="${2:-}"
 
-    if [[ -n "$HAS_FZF" ]]; then
+    if [[ -n "$HAS_GUM" ]]; then
+        gum filter \
+            --placeholder "$prompt" \
+            --prompt "▸ " \
+            --prompt.foreground="214" \
+            --indicator.foreground="33" \
+            --match.foreground="214" \
+            --height 15
+    elif [[ -n "$HAS_FZF" ]]; then
         if [[ -n "$preview_cmd" ]]; then
             fzf --prompt="$prompt " --preview="$preview_cmd" --preview-window=right:50%
         else
@@ -504,7 +793,18 @@ tui_textbox() {
     local height="${3:-20}"
     local width="${4:-70}"
 
-    if [[ -n "$HAS_DIALOG" ]]; then
+    if [[ -n "$HAS_GUM" ]]; then
+        echo >&2
+        gum style \
+            --foreground 33 --border-foreground 33 \
+            --border rounded --padding "0 2" --margin "0 0 1 0" \
+            --bold "$title" >&2
+        if [[ -f "$content" ]]; then
+            gum pager --soft-wrap < "$content"
+        else
+            echo "$content" | gum pager --soft-wrap
+        fi
+    elif [[ -n "$HAS_DIALOG" ]]; then
         if [[ -f "$content" ]]; then
             dialog --title "$title" --textbox "$content" "$height" "$width"
         else
@@ -521,9 +821,21 @@ tui_textbox() {
         echo -e "${TUI_BOLD}${TUI_CYAN}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE} $title ${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_SYM_HLINE}${TUI_NC}"
         echo
         if [[ -f "$content" ]]; then
-            less "$content"
+            if command -v less &>/dev/null; then
+                less "$content"
+            elif command -v more &>/dev/null; then
+                more "$content"
+            else
+                cat "$content"
+            fi
         else
-            echo "$content" | less
+            if command -v less &>/dev/null; then
+                echo "$content" | less
+            elif command -v more &>/dev/null; then
+                echo "$content" | more
+            else
+                echo "$content"
+            fi
         fi
     fi
 }
@@ -563,10 +875,23 @@ tui_progress_box() {
     bar=$(printf "%${filled}s" | tr ' ' "${TUI_SYM_BAR_FILL}")
     bar+=$(printf "%${empty}s" | tr ' ' "${TUI_SYM_BAR_EMPTY}")
 
-    local message
-    message=$(printf "%s: %d/%d (%d%%)\n\n[%s]" "$label" "$current" "$total" "$percent" "$bar")
-
-    tui_msgbox "$title" "$message" 10 50
+    if [[ -n "$HAS_GUM" ]]; then
+        echo
+        gum style \
+            --foreground 33 --border-foreground 33 \
+            --border rounded --padding "1 2" --margin "0 0 1 0" \
+            --bold "$title"
+        echo
+        gum style --foreground 245 "$label: $current/$total"
+        echo
+        echo "$(gum style --foreground 34 "$bar") $(gum style --bold "${percent}%")"
+        echo
+        gum input --placeholder "Press Enter to continue..." --width 0 >/dev/null 2>&1 || read -r _
+    else
+        local message
+        message=$(printf "%s: %d/%d (%d%%)\n\n[%s]" "$label" "$current" "$total" "$percent" "$bar")
+        tui_msgbox "$title" "$message" 10 50
+    fi
 }
 
 # ============================================================================
@@ -579,23 +904,43 @@ tui_status() {
     local type="$1"
     local message="$2"
 
-    case "$type" in
-        pass|ok|success)
-            echo -e "${TUI_GREEN}${TUI_SYM_PASS}${TUI_NC} $message"
-            ;;
-        fail|error)
-            echo -e "${TUI_RED}${TUI_SYM_FAIL}${TUI_NC} $message"
-            ;;
-        warn|warning)
-            echo -e "${TUI_YELLOW}${TUI_SYM_WARN}${TUI_NC} $message"
-            ;;
-        info)
-            echo -e "${TUI_CYAN}${TUI_SYM_INFO}${TUI_NC} $message"
-            ;;
-        *)
-            echo "${TUI_SYM_BULLET} $message"
-            ;;
-    esac
+    if [[ -n "$HAS_GUM" ]]; then
+        case "$type" in
+            pass|ok|success)
+                echo "$(gum style --foreground 34 "✓") $message"
+                ;;
+            fail|error)
+                echo "$(gum style --foreground 196 "✗") $message"
+                ;;
+            warn|warning)
+                echo "$(gum style --foreground 220 "⚠") $message"
+                ;;
+            info)
+                echo "$(gum style --foreground 33 "ℹ") $message"
+                ;;
+            *)
+                echo "$(gum style --foreground 214 "▸") $message"
+                ;;
+        esac
+    else
+        case "$type" in
+            pass|ok|success)
+                echo -e "${TUI_GREEN}${TUI_SYM_PASS}${TUI_NC} $message"
+                ;;
+            fail|error)
+                echo -e "${TUI_RED}${TUI_SYM_FAIL}${TUI_NC} $message"
+                ;;
+            warn|warning)
+                echo -e "${TUI_YELLOW}${TUI_SYM_WARN}${TUI_NC} $message"
+                ;;
+            info)
+                echo -e "${TUI_CYAN}${TUI_SYM_INFO}${TUI_NC} $message"
+                ;;
+            *)
+                echo "${TUI_SYM_BULLET} $message"
+                ;;
+        esac
+    fi
 }
 
 # ============================================================================
@@ -607,14 +952,171 @@ tui_header() {
     local text="$1"
     local width="${2:-60}"
 
-    echo
-    echo -e "${TUI_BOLD}${TUI_BLUE}$(printf "${TUI_SYM_HLINE}%.0s" $(seq 1 "$width"))${TUI_NC}"
-    echo -e "${TUI_BOLD}${TUI_BLUE}  $text${TUI_NC}"
-    echo -e "${TUI_BOLD}${TUI_BLUE}$(printf "${TUI_SYM_HLINE}%.0s" $(seq 1 "$width"))${TUI_NC}"
-    echo
+    if [[ -n "$HAS_GUM" ]]; then
+        echo
+        gum style \
+            --foreground 33 --border-foreground 33 \
+            --border normal --padding "0 2" \
+            --bold "$text"
+        echo
+    else
+        echo
+        echo -e "${TUI_BOLD}${TUI_BLUE}$(printf "${TUI_SYM_HLINE}%.0s" $(seq 1 "$width"))${TUI_NC}"
+        echo -e "${TUI_BOLD}${TUI_BLUE}  $text${TUI_NC}"
+        echo -e "${TUI_BOLD}${TUI_BLUE}$(printf "${TUI_SYM_HLINE}%.0s" $(seq 1 "$width"))${TUI_NC}"
+        echo
+    fi
 }
 
 # Print navigation hints
 tui_nav_hint() {
-    echo -e "${TUI_DIM}${TUI_SYM_NAV}${TUI_NC}"
+    if [[ -n "$HAS_GUM" ]]; then
+        gum style --foreground 245 --italic "↑↓ Navigate  Enter Select  Esc Cancel"
+    else
+        echo -e "${TUI_DIM}${TUI_SYM_NAV}${TUI_NC}"
+    fi
+}
+
+# ============================================================================
+# Additional Gum-Enhanced Widgets
+# ============================================================================
+
+# Multi-line text input (for notes, descriptions, etc.)
+# Usage: tui_write "Enter your notes" [placeholder]
+tui_write() {
+    local prompt="${1:-Enter text}"
+    local placeholder="${2:-Type here...}"
+
+    if [[ -n "$HAS_GUM" ]]; then
+        echo >&2
+        gum style --foreground 33 --bold "$prompt" >&2
+        gum write \
+            --placeholder "$placeholder" \
+            --char-limit 500 \
+            --width 60
+    else
+        echo >&2
+        echo -e "${TUI_BOLD}$prompt${TUI_NC}" >&2
+        echo "(Enter text, then press Ctrl+D when done)" >&2
+        cat
+    fi
+}
+
+# File picker
+# Usage: tui_file "Select a file" [directory] [extension]
+tui_file() {
+    local prompt="${1:-Select a file}"
+    local directory="${2:-.}"
+    local extension="${3:-}"
+
+    if [[ -n "$HAS_GUM" ]]; then
+        echo >&2
+        gum style --foreground 33 --bold "$prompt" >&2
+        if [[ -n "$extension" ]]; then
+            gum file "$directory" --file --height 15 | grep -E "\.${extension}$" || \
+                gum file "$directory" --file --height 15
+        else
+            gum file "$directory" --file --height 15
+        fi
+    else
+        # Fallback: list files and let user choose
+        local files=()
+        while IFS= read -r -d '' file; do
+            files+=("$file")
+        done < <(find "$directory" -maxdepth 3 -type f ${extension:+-name "*.$extension"} -print0 2>/dev/null | head -z -n 20)
+
+        if [[ ${#files[@]} -eq 0 ]]; then
+            echo "No files found" >&2
+            return 1
+        fi
+
+        echo -e "\n${TUI_BOLD}$prompt${TUI_NC}" >&2
+        for i in "${!files[@]}"; do
+            printf "  %2d) %s\n" "$((i+1))" "${files[$i]}" >&2
+        done
+        echo >&2
+
+        local choice
+        echo -en "Enter number: " >&2
+        read -r choice
+        if [[ "$choice" =~ ^[0-9]+$ ]] && [[ "$choice" -ge 1 ]] && [[ "$choice" -le "${#files[@]}" ]]; then
+            echo "${files[$((choice-1))]}"
+        else
+            return 1
+        fi
+    fi
+}
+
+# Tabbed output display
+# Usage: tui_table "Header1,Header2,Header3" "row1col1,row1col2,row1col3" "row2col1,row2col2,row2col3"
+tui_table() {
+    if [[ -n "$HAS_GUM" ]]; then
+        # Convert comma-separated values to tab-separated for gum table
+        local formatted=""
+        for row in "$@"; do
+            formatted+="${row//,/$'\t'}"$'\n'
+        done
+        echo "$formatted" | gum table \
+            --border.foreground="33" \
+            --header.foreground="214" \
+            --cell.foreground="255"
+    else
+        # Simple fallback table
+        local first=1
+        for row in "$@"; do
+            if [[ $first -eq 1 ]]; then
+                echo -e "${TUI_BOLD}${row//,/  │  }${TUI_NC}"
+                echo -e "${TUI_DIM}$(printf '─%.0s' {1..60})${TUI_NC}"
+                first=0
+            else
+                echo "${row//,/  │  }"
+            fi
+        done
+    fi
+}
+
+# Join multiple strings with a styled separator
+# Usage: tui_join " │ " "item1" "item2" "item3"
+tui_join() {
+    local sep="$1"
+    shift
+    if [[ -n "$HAS_GUM" ]]; then
+        local result=""
+        local first=1
+        for item in "$@"; do
+            if [[ $first -eq 1 ]]; then
+                result="$item"
+                first=0
+            else
+                result+="$(gum style --foreground 245 "$sep")$item"
+            fi
+        done
+        echo "$result"
+    else
+        local IFS="$sep"
+        echo "$*"
+    fi
+}
+
+# Loading animation with custom message
+# Usage: tui_loading "Initializing..." 2
+tui_loading() {
+    local message="${1:-Loading...}"
+    local seconds="${2:-2}"
+
+    if [[ -n "$HAS_GUM" ]]; then
+        gum spin \
+            --spinner pulse \
+            --spinner.foreground="214" \
+            --title "$message" \
+            --title.foreground="33" \
+            -- sleep "$seconds"
+    else
+        echo -n "$message "
+        for ((i=0; i<seconds*4; i++)); do
+            echo -n "."
+            sleep 0.25
+        done
+        echo " done"
+    fi
 }
