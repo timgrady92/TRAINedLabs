@@ -40,7 +40,8 @@ SCENARIO
     local max_attempts=4
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -53,7 +54,11 @@ SCENARIO
 
         if [[ -n "$user_cmd" ]]; then
             # Execute in practice directory
-            (cd "$PRACTICE_DIR" && eval "$user_cmd" 2>&1) || true
+            (cd "$PRACTICE_DIR" && timeout 5 bash -c "$user_cmd" 2>&1) || true
+            if [[ $? -eq 124 ]]; then
+                echo -e "\n${YELLOW}Command timed out (5s limit)${NC}"
+                continue
+            fi
 
             # Check if archive was created
             if [[ -f "${PRACTICE_DIR}/backup.tar.gz" ]]; then
@@ -105,7 +110,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -132,14 +138,19 @@ SCENARIO
     local attempts=0
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
         fi
 
         if [[ -n "$user_cmd" ]]; then
-            (cd "$PRACTICE_DIR" && eval "$user_cmd" 2>&1) || true
+            (cd "$PRACTICE_DIR" && timeout 5 bash -c "$user_cmd" 2>&1) || true
+            if [[ $? -eq 124 ]]; then
+                echo -e "\n${YELLOW}Command timed out (5s limit)${NC}"
+                continue
+            fi
 
             if [[ -f "${PRACTICE_DIR}/logs-archive.tar.bz2" ]]; then
                 if file "${PRACTICE_DIR}/logs-archive.tar.bz2" | grep -qi "bzip2"; then
@@ -176,7 +187,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -208,7 +220,8 @@ SCENARIO
     expected_output=$(cd "$PRACTICE_DIR" && tar -tzf test-archive.tar.gz 2>/dev/null | head -5)
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             rm -f "${PRACTICE_DIR}/test-archive.tar.gz"
@@ -254,7 +267,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && { rm -f "${PRACTICE_DIR}/test-archive.tar.gz"; return 1; }
     done
 }
@@ -286,7 +300,8 @@ SCENARIO
     local attempts=0
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             rm -f "${PRACTICE_DIR}/extract-test.tar.gz"
@@ -295,7 +310,11 @@ SCENARIO
         fi
 
         if [[ -n "$user_cmd" ]]; then
-            (cd "$PRACTICE_DIR" && eval "$user_cmd" 2>&1) || true
+            (cd "$PRACTICE_DIR" && timeout 5 bash -c "$user_cmd" 2>&1) || true
+            if [[ $? -eq 124 ]]; then
+                echo -e "\n${YELLOW}Command timed out (5s limit)${NC}"
+                continue
+            fi
 
             # Check if files were extracted to target
             if [[ -d "${PRACTICE_DIR}/restore-target/configs" ]]; then
@@ -335,7 +354,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && {
             rm -f "${PRACTICE_DIR}/extract-test.tar.gz"
             rm -rf "${PRACTICE_DIR}/restore-target"
@@ -372,7 +392,8 @@ SCENARIO
     rm -f "${PRACTICE_DIR}/text/users.txt.restored"
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             rm -f "${PRACTICE_DIR}/single-extract.tar.gz"
@@ -384,7 +405,11 @@ SCENARIO
             local orig_mtime=""
             [[ -f "${PRACTICE_DIR}/text/users.txt" ]] && orig_mtime=$(stat -c %Y "${PRACTICE_DIR}/text/users.txt" 2>/dev/null || true)
 
-            (cd "$PRACTICE_DIR" && eval "$user_cmd" 2>&1) || true
+            (cd "$PRACTICE_DIR" && timeout 5 bash -c "$user_cmd" 2>&1) || true
+            if [[ $? -eq 124 ]]; then
+                echo -e "\n${YELLOW}Command timed out (5s limit)${NC}"
+                continue
+            fi
 
             # Check if command targeted just users.txt
             if [[ "$user_cmd" == *"users.txt"* ]] && [[ "$user_cmd" == *"-x"* || "$user_cmd" == *"--extract"* ]]; then
@@ -422,7 +447,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && { rm -f "${PRACTICE_DIR}/single-extract.tar.gz"; return 1; }
     done
 }
@@ -451,14 +477,19 @@ SCENARIO
     local attempts=0
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
         fi
 
         if [[ -n "$user_cmd" ]]; then
-            (cd "$PRACTICE_DIR" && eval "$user_cmd" 2>&1) || true
+            (cd "$PRACTICE_DIR" && timeout 5 bash -c "$user_cmd" 2>&1) || true
+            if [[ $? -eq 124 ]]; then
+                echo -e "\n${YELLOW}Command timed out (5s limit)${NC}"
+                continue
+            fi
 
             if [[ -f "${PRACTICE_DIR}/configs-archive.tar.xz" ]]; then
                 if file "${PRACTICE_DIR}/configs-archive.tar.xz" | grep -qi "xz"; then
@@ -501,7 +532,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -546,7 +578,8 @@ run_tar_exercises() {
 
         if [[ $((i+1)) -lt $count ]]; then
             echo
-            read -rp "Press Enter for next exercise (or 'q' to quit)... " choice
+            echo -en "Press Enter for next exercise (or 'q' to quit)... "
+            read -r choice
             [[ "$choice" == "q" ]] && break
         fi
     done

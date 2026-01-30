@@ -45,7 +45,8 @@ SCENARIO
     expected_output=$(grep -i 'error' "$practice_file" 2>/dev/null)
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         # Check if user wants to skip
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
@@ -61,7 +62,11 @@ SCENARIO
         # Validate command
         local user_output
         if [[ -n "$user_cmd" ]]; then
-            user_output=$(cd "$PRACTICE_DIR" && eval "$user_cmd" 2>&1) || true
+            user_output=$(cd "$PRACTICE_DIR" && timeout 5 bash -c "$user_cmd" 2>&1)
+            if [[ $? -eq 124 ]]; then
+                echo -e "\n${YELLOW}Command timed out (5s limit)${NC}"
+                continue
+            fi
         fi
 
         if [[ -n "$user_cmd" && "$user_output" == "$expected_output" ]]; then
@@ -122,7 +127,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -153,7 +159,8 @@ SCENARIO
     expected_output=$(grep -v 'nologin' "$practice_file" 2>/dev/null)
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -198,7 +205,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -229,7 +237,8 @@ SCENARIO
     expected_output=$(grep -c 'sshd' "$practice_file" 2>/dev/null)
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -270,7 +279,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -301,7 +311,8 @@ SCENARIO
     expected_output=$(grep -n 'Failed' "$practice_file" 2>/dev/null)
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -342,7 +353,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -373,7 +385,8 @@ SCENARIO
     expected_output=$(grep -iE 'error|warning' "$practice_file" 2>/dev/null)
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -415,7 +428,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -444,7 +458,8 @@ SCENARIO
     expected_files=$(grep -rl 'password' "${PRACTICE_DIR}/configs" 2>/dev/null | wc -l)
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -486,7 +501,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -531,7 +547,8 @@ run_grep_exercises() {
 
         if [[ $((i+1)) -lt $count ]]; then
             echo
-            read -rp "Press Enter for next exercise (or 'q' to quit)... " choice
+            echo -en "Press Enter for next exercise (or 'q' to quit)... "
+            read -r choice
             [[ "$choice" == "q" ]] && break
         fi
     done

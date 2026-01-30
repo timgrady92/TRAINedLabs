@@ -136,7 +136,8 @@ run_challenge() {
     start_time=$(date +%s)
 
     # Get user input
-    read -rp "Your command: " user_answer
+    echo -en "Your command: "
+    read -r user_answer
 
     local end_time
     end_time=$(date +%s)
@@ -234,7 +235,8 @@ run_session() {
 
         echo
         if [[ $i -lt $count ]]; then
-            read -rp "Press Enter for next question..."
+            echo -en "Press Enter for next question..."
+            read -r _
         fi
     done
 

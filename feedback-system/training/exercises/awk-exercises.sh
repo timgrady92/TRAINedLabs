@@ -31,7 +31,8 @@ SCENARIO
     local attempts=0
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -41,7 +42,11 @@ SCENARIO
            [[ "$user_cmd" == *'-F":"'* ]]; then
             if [[ "$user_cmd" == *'$1'* ]] || [[ "$user_cmd" == *"\$1"* ]]; then
                 local user_output
-                user_output=$(cd "$PRACTICE_DIR" && eval "$user_cmd" 2>&1) || true
+                user_output=$(cd "$PRACTICE_DIR" && timeout 5 bash -c "$user_cmd" 2>&1)
+                if [[ $? -eq 124 ]]; then
+                    echo -e "\n${YELLOW}Command timed out (5s limit)${NC}"
+                    continue
+                fi
                 echo
                 print_pass "Correct!"
                 echo "Usernames:"
@@ -74,7 +79,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -103,7 +109,8 @@ SCENARIO
     local attempts=0
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -143,7 +150,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -171,7 +179,8 @@ SCENARIO
     local attempts=0
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -211,7 +220,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -240,7 +250,8 @@ SCENARIO
     local attempts=0
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -280,7 +291,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -309,7 +321,8 @@ SCENARIO
     local attempts=0
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -348,7 +361,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -384,7 +398,8 @@ run_awk_exercises() {
 
         if [[ $((i+1)) -lt $count ]]; then
             echo
-            read -rp "Press Enter for next exercise (or 'q' to quit)... " choice
+            echo -en "Press Enter for next exercise (or 'q' to quit)... "
+            read -r choice
             [[ "$choice" == "q" ]] && break
         fi
     done

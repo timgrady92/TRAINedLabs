@@ -27,7 +27,8 @@ SCENARIO
     local attempts=0
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -67,7 +68,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -92,7 +94,8 @@ SCENARIO
     local attempts=0
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -131,7 +134,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -156,7 +160,8 @@ SCENARIO
     local attempts=0
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -197,7 +202,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -222,7 +228,8 @@ SCENARIO
     local attempts=0
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -260,7 +267,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -285,7 +293,8 @@ SCENARIO
     local attempts=0
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -323,7 +332,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -359,7 +369,8 @@ run_networking_exercises() {
 
         if [[ $((i+1)) -lt $count ]]; then
             echo
-            read -rp "Press Enter for next exercise (or 'q' to quit)... " choice
+            echo -en "Press Enter for next exercise (or 'q' to quit)... "
+            read -r choice
             [[ "$choice" == "q" ]] && break
         fi
     done

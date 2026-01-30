@@ -169,7 +169,8 @@ launch_practice() {
     "${FEEDBACK_DIR}/lpic-train" "${args[@]}" || true
 
     echo
-    read -rp "Press Enter to return to menu..."
+    echo -en "Press Enter to return to menu..."
+    read -r _
 }
 
 # ============================================================================
@@ -327,7 +328,8 @@ This is like flashcards but for commands."
     "${FEEDBACK_DIR}/lpic-train" drill "$choice" -n "$rounds" || true
 
     echo
-    read -rp "Press Enter to return to menu..."
+    echo -en "Press Enter to return to menu..."
+    read -r _
 }
 
 # ============================================================================
@@ -363,7 +365,8 @@ randomly mixed together."
     "${FEEDBACK_DIR}/lpic-train" mix -n "$count" || true
 
     echo
-    read -rp "Press Enter to return to menu..."
+    echo -en "Press Enter to return to menu..."
+    read -r _
 }
 
 # ============================================================================
@@ -383,7 +386,8 @@ launch_smart_review() {
     "${FEEDBACK_DIR}/lpic-train" smart || true
 
     echo
-    read -rp "Press Enter to return to menu..."
+    echo -en "Press Enter to return to menu..."
+    read -r _
 }
 
 # ============================================================================

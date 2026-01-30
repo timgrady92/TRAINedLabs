@@ -93,14 +93,16 @@ print_exam_note() {
 wait_for_user() {
     local prompt="${1:-Press Enter to continue...}"
     echo
-    read -rp "${DIM}${prompt}${NC}" _
+    echo -en "${DIM}${prompt}${NC} "
+    read -r _
 }
 
 # Ask yes/no question
 confirm() {
     local prompt="${1:-Continue?}"
     local response
-    read -rp "${prompt} [y/N] " response
+    echo -en "${prompt} [y/N] "
+    read -r response
     [[ "$response" =~ ^[Yy] ]]
 }
 
@@ -118,7 +120,8 @@ choose_option() {
 
     local choice
     while true; do
-        read -rp "Enter choice [1-${#options[@]}]: " choice
+        echo -en "Enter choice [1-${#options[@]}]: "
+        read -r choice
         if [[ "$choice" =~ ^[0-9]+$ ]] && [[ "$choice" -ge 1 ]] && [[ "$choice" -le "${#options[@]}" ]]; then
             return $((choice - 1))
         fi
@@ -183,15 +186,26 @@ show_solution() {
     echo -e "  ${CYAN}$solution${NC}"
 }
 
+# Command timeout (seconds) - prevents hanging on blocking commands
+COMMAND_TIMEOUT="${COMMAND_TIMEOUT:-5}"
+
 # Validate user command against expected output
 validate_command() {
     local user_cmd="$1"
     local expected_file="$2"
     local working_dir="${3:-$PRACTICE_DIR}"
 
-    # Execute user command safely
+    # Execute user command safely with timeout
     local user_output
-    user_output=$(cd "$working_dir" && eval "$user_cmd" 2>&1) || true
+    local exit_code
+    user_output=$(cd "$working_dir" && timeout "$COMMAND_TIMEOUT" bash -c "$user_cmd" 2>&1)
+    exit_code=$?
+
+    # Check for timeout (exit code 124)
+    if [[ $exit_code -eq 124 ]]; then
+        echo -e "\n${YELLOW}Command timed out (${COMMAND_TIMEOUT}s limit). Try a different approach.${NC}"
+        return 1
+    fi
 
     # Get expected output
     local expected_output
@@ -203,6 +217,25 @@ validate_command() {
     else
         return 1
     fi
+}
+
+# Execute user command with timeout (for exercise files)
+# Returns output via stdout, sets COMMAND_EXIT_CODE and COMMAND_TIMED_OUT
+execute_user_command() {
+    local user_cmd="$1"
+    local working_dir="${2:-$PRACTICE_DIR}"
+
+    COMMAND_TIMED_OUT=0
+    local output
+    output=$(cd "$working_dir" && timeout "$COMMAND_TIMEOUT" bash -c "$user_cmd" 2>&1)
+    COMMAND_EXIT_CODE=$?
+
+    if [[ $COMMAND_EXIT_CODE -eq 124 ]]; then
+        COMMAND_TIMED_OUT=1
+        echo -e "${YELLOW}Command timed out (${COMMAND_TIMEOUT}s limit)${NC}" >&2
+    fi
+
+    echo "$output"
 }
 
 # Flexible command validation using key patterns
@@ -499,7 +532,8 @@ tui_simple_menu() {
         done
         echo
         local choice
-        read -rp "Enter choice [1-${#tags[@]}]: " choice
+        echo -en "Enter choice [1-${#tags[@]}]: "
+        read -r choice
         if [[ "$choice" =~ ^[0-9]+$ ]] && [[ "$choice" -ge 1 ]] && [[ "$choice" -le "${#tags[@]}" ]]; then
             echo "${tags[$((choice-1))]}"
         fi
@@ -519,7 +553,8 @@ tui_simple_yesno() {
         whiptail --title "$title" --yesno "$question" 8 50
     else
         local response
-        read -rp "$question [y/N] " response
+        echo -en "$question [y/N] "
+        read -r response
         [[ "$response" =~ ^[Yy] ]]
     fi
 }

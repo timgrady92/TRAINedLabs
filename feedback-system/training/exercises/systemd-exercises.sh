@@ -37,7 +37,8 @@ SCENARIO
     local attempts=0
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -53,7 +54,7 @@ SCENARIO
             if [[ "$user_cmd" == *"systemctl"* ]] && [[ "$user_cmd" == *"status"* ]] && \
                [[ "$user_cmd" == *"ssh"* || "$user_cmd" == *"sshd"* ]]; then
                 # Run the command to show output
-                eval "$user_cmd" 2>&1 || true
+                timeout 5 bash -c "$user_cmd" 2>&1 || true
                 echo
                 print_pass "Correct! This shows service status, state, and recent logs."
                 record_exercise_attempt "systemd" "status" 1
@@ -93,7 +94,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -118,7 +120,8 @@ SCENARIO
     local attempts=0
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -126,7 +129,7 @@ SCENARIO
 
         if [[ -n "$user_cmd" ]]; then
             local user_output
-            user_output=$(eval "$user_cmd" 2>&1 | head -20) || true
+            user_output=$(timeout 5 bash -c "$user_cmd" 2>&1 | head -20) || true
 
             # Accept various valid approaches
             if [[ "$user_cmd" == *"systemctl"* ]] && \
@@ -166,7 +169,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -194,7 +198,8 @@ SCENARIO
     local attempts=0
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -205,7 +210,7 @@ SCENARIO
             if [[ "$user_cmd" == *"systemctl"* ]] && [[ "$user_cmd" == *"is-enabled"* ]] && \
                [[ "$user_cmd" == *"cron"* ]]; then
                 local user_output
-                user_output=$(eval "$user_cmd" 2>&1) || true
+                user_output=$(timeout 5 bash -c "$user_cmd" 2>&1) || true
                 echo "$user_output"
                 echo
                 print_pass "Correct! is-enabled shows boot-time status."
@@ -239,7 +244,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -268,7 +274,8 @@ SCENARIO
     local attempts=0
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -280,7 +287,7 @@ SCENARIO
                [[ "$user_cmd" == *"-u"* || "$user_cmd" == *"--unit"* ]] && \
                [[ "$user_cmd" == *"ssh"* ]]; then
                 local user_output
-                user_output=$(eval "$user_cmd" 2>&1 | head -5) || true
+                user_output=$(timeout 5 bash -c "$user_cmd" 2>&1 | head -5) || true
                 echo "$user_output"
                 if [[ -n "$user_output" ]]; then
                     echo "..."
@@ -322,7 +329,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -349,7 +357,8 @@ SCENARIO
     local attempts=0
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -358,7 +367,7 @@ SCENARIO
         if [[ -n "$user_cmd" ]]; then
             if [[ "$user_cmd" == *"systemd-analyze"* ]]; then
                 local user_output
-                user_output=$(eval "$user_cmd" 2>&1) || true
+                user_output=$(timeout 5 bash -c "$user_cmd" 2>&1) || true
                 echo "$user_output"
                 echo
                 print_pass "Correct! Boot analysis displayed."
@@ -395,7 +404,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -422,7 +432,8 @@ SCENARIO
     local attempts=0
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -433,7 +444,7 @@ SCENARIO
             if [[ "$user_cmd" == *"systemctl"* ]] && \
                [[ "$user_cmd" == *"--failed"* || "$user_cmd" == *"--state=failed"* || "$user_cmd" == *"failed"* ]]; then
                 local user_output
-                user_output=$(eval "$user_cmd" 2>&1) || true
+                user_output=$(timeout 5 bash -c "$user_cmd" 2>&1) || true
                 echo "$user_output"
                 echo
                 print_pass "Correct! Failed services listed."
@@ -466,7 +477,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -495,7 +507,8 @@ SCENARIO
     local attempts=0
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -504,7 +517,7 @@ SCENARIO
         if [[ -n "$user_cmd" ]]; then
             if [[ "$user_cmd" == *"systemctl"* ]] && [[ "$user_cmd" == *"get-default"* ]]; then
                 local user_output
-                user_output=$(eval "$user_cmd" 2>&1) || true
+                user_output=$(timeout 5 bash -c "$user_cmd" 2>&1) || true
                 echo "$user_output"
                 echo
                 print_pass "Correct! Default target shown."
@@ -538,7 +551,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -584,7 +598,8 @@ run_systemd_exercises() {
 
         if [[ $((i+1)) -lt $count ]]; then
             echo
-            read -rp "Press Enter for next exercise (or 'q' to quit)... " choice
+            echo -en "Press Enter for next exercise (or 'q' to quit)... "
+            read -r choice
             [[ "$choice" == "q" ]] && break
         fi
     done

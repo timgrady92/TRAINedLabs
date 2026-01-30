@@ -264,7 +264,8 @@ launch_scenario() {
 
     echo
     echo -e "${TUI_CYAN}════════════════════════════════════════════════════════════${TUI_NC}"
-    read -rp "Press Enter to return to menu..."
+    echo -en "Press Enter to return to menu..."
+    read -r _
 }
 
 # ============================================================================

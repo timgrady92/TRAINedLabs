@@ -306,7 +306,8 @@ launch_lesson() {
 
     # Wait for user after lesson
     echo
-    read -rp "Press Enter to return to menu..."
+    echo -en "Press Enter to return to menu..."
+    read -r _
 }
 
 # ============================================================================

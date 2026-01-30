@@ -223,7 +223,8 @@ INFO
         rel_path="${PWD#$PRACTICE_DIR}"
         rel_path="${rel_path:-/}"
 
-        read -rp "${BOLD}sandbox${CYAN}${rel_path}${NC}> " cmd || {
+        echo -en "${BOLD}sandbox${CYAN}${rel_path}${NC}> "
+        read -r cmd || {
             echo
             break
         }

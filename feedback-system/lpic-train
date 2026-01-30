@@ -451,7 +451,8 @@ mode_drill() {
     echo "Format: Short answer questions about $topic"
     echo "Rounds: $rounds"
     echo
-    read -rp "Press Enter to start..."
+    echo -en "Press Enter to start..."
+    read -r _
 
     run_quick_drill "$topic" "$rounds"
 }
@@ -526,7 +527,8 @@ mode_mix() {
 
         if [[ $i -lt $count ]]; then
             echo
-            read -rp "Press Enter for next (q to quit)... " choice
+            echo -en "Press Enter for next (q to quit)... "
+            read -r choice
             [[ "$choice" == "q" ]] && break
         fi
     done
@@ -582,7 +584,8 @@ mode_smart_review() {
     echo "  4. Return"
     echo
 
-    read -rp "Choice [1-4]: " choice
+    echo -en "Choice [1-4]: "
+    read -r choice
 
     case "$choice" in
         1)

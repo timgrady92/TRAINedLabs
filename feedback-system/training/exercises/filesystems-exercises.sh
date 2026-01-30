@@ -37,7 +37,8 @@ SCENARIO
     local attempts=0
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -50,7 +51,11 @@ SCENARIO
 
         if [[ -n "$user_cmd" ]]; then
             local user_output
-            user_output=$(eval "$user_cmd" 2>&1) || true
+            user_output=$(timeout 5 bash -c "$user_cmd" 2>&1)
+            if [[ $? -eq 124 ]]; then
+                echo -e "\n${YELLOW}Command timed out (5s limit)${NC}"
+                continue
+            fi
 
             # Check if output looks like df -h (has headers and human sizes)
             if [[ "$user_cmd" == *"df"* ]] && [[ "$user_cmd" == *"-h"* || "$user_cmd" == *"--human"* ]]; then
@@ -95,7 +100,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -122,7 +128,8 @@ SCENARIO
     local attempts=0
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -130,7 +137,11 @@ SCENARIO
 
         if [[ -n "$user_cmd" ]]; then
             local user_output
-            user_output=$(cd "$PRACTICE_DIR" && eval "$user_cmd" 2>&1) || true
+            user_output=$(cd "$PRACTICE_DIR" && timeout 5 bash -c "$user_cmd" 2>&1)
+            if [[ $? -eq 124 ]]; then
+                echo -e "\n${YELLOW}Command timed out (5s limit)${NC}"
+                continue
+            fi
 
             # Check if using du with -h and -s (summary)
             if [[ "$user_cmd" == *"du"* ]] && [[ "$user_cmd" == *"-h"* || "$user_cmd" == *"--human"* ]]; then
@@ -172,7 +183,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -201,7 +213,8 @@ SCENARIO
     local attempts=0
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -209,7 +222,11 @@ SCENARIO
 
         if [[ -n "$user_cmd" ]]; then
             local user_output
-            user_output=$(eval "$user_cmd" 2>&1) || true
+            user_output=$(timeout 5 bash -c "$user_cmd" 2>&1)
+            if [[ $? -eq 124 ]]; then
+                echo -e "\n${YELLOW}Command timed out (5s limit)${NC}"
+                continue
+            fi
 
             # Accept mount, findmnt, or cat /proc/mounts
             if [[ "$user_cmd" == "mount" ]] || \
@@ -252,7 +269,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -280,7 +298,8 @@ SCENARIO
     local attempts=0
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -288,7 +307,11 @@ SCENARIO
 
         if [[ -n "$user_cmd" ]]; then
             local user_output
-            user_output=$(eval "$user_cmd" 2>&1) || true
+            user_output=$(timeout 5 bash -c "$user_cmd" 2>&1)
+            if [[ $? -eq 124 ]]; then
+                echo -e "\n${YELLOW}Command timed out (5s limit)${NC}"
+                continue
+            fi
 
             # Accept cat, less, more, head, view of /etc/fstab
             if [[ "$user_cmd" == *"/etc/fstab"* ]]; then
@@ -327,7 +350,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -352,7 +376,8 @@ SCENARIO
     local attempts=0
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -360,7 +385,11 @@ SCENARIO
 
         if [[ -n "$user_cmd" ]]; then
             local user_output
-            user_output=$(eval "$user_cmd" 2>&1) || true
+            user_output=$(timeout 5 bash -c "$user_cmd" 2>&1)
+            if [[ $? -eq 124 ]]; then
+                echo -e "\n${YELLOW}Command timed out (5s limit)${NC}"
+                continue
+            fi
 
             # Accept various methods to show filesystem type
             if [[ "$user_cmd" == *"df -T"* ]] || \
@@ -407,7 +436,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -437,7 +467,8 @@ SCENARIO
     local attempts=0
 
     while true; do
-        read -rp "Your command: " user_cmd
+        echo -en "Your command: "
+        read -r user_cmd
 
         if [[ "$user_cmd" == "skip" || "$user_cmd" == "s" ]]; then
             return 1
@@ -445,7 +476,11 @@ SCENARIO
 
         if [[ -n "$user_cmd" ]]; then
             local user_output
-            user_output=$(eval "$user_cmd" 2>&1) || true
+            user_output=$(timeout 5 bash -c "$user_cmd" 2>&1)
+            if [[ $? -eq 124 ]]; then
+                echo -e "\n${YELLOW}Command timed out (5s limit)${NC}"
+                continue
+            fi
 
             # Check for df -i
             if [[ "$user_cmd" == *"df"* ]] && [[ "$user_cmd" == *"-i"* || "$user_cmd" == *"--inodes"* ]]; then
@@ -480,7 +515,8 @@ SCENARIO
         fi
 
         echo
-        read -rp "Try again? [Y/n/skip] " choice
+        echo -en "Try again? [Y/n/skip] "
+        read -r choice
         [[ "$choice" == "n" ]] && return 1
     done
 }
@@ -525,7 +561,8 @@ run_filesystems_exercises() {
 
         if [[ $((i+1)) -lt $count ]]; then
             echo
-            read -rp "Press Enter for next exercise (or 'q' to quit)... " choice
+            echo -en "Press Enter for next exercise (or 'q' to quit)... "
+            read -r choice
             [[ "$choice" == "q" ]] && break
         fi
     done

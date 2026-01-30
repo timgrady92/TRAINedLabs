@@ -24,7 +24,7 @@ if [[ ! -f "${TRAINING_DIR}/common.sh" ]]; then
     exit 1
 fi
 
-# Source dependencies
+# Source dependencies (widgets.sh sources theme.sh)
 source "${TUI_DIR}/widgets.sh"
 source "${TRAINING_DIR}/common.sh"
 
@@ -144,13 +144,15 @@ show_settings_menu() {
             tui_clear
             "${FEEDBACK_DIR}/lpic-check" verify-packages
             echo
-            read -rp "Press Enter to continue..."
+            echo -en "Press Enter to continue..."
+            read -r _
             ;;
         test)
             tui_clear
             "${FEEDBACK_DIR}/lpic-check" self-test
             echo
-            read -rp "Press Enter to continue..."
+            echo -en "Press Enter to continue..."
+            read -r _
             ;;
         about)
             tui_msgbox "About" "LPIC-1 Training Platform v1.0
@@ -249,14 +251,16 @@ Ready? Press OK to begin!"
     echo
     echo -e "${TUI_GREEN}Lesson complete!${TUI_NC}"
     echo
-    read -rp "Press Enter to continue to practice exercises..."
+    echo -en "Press Enter to continue to practice exercises..."
+    read -r _
 
     # Offer practice
     if tui_yesno "Practice Now?" "Would you like to practice what you just learned?\n\nPractice mode gives you exercises with hints available.\nThis is the best way to reinforce your learning."; then
         tui_clear
         "${FEEDBACK_DIR}/lpic-train" practice "$first_topic" || true
         echo
-        read -rp "Press Enter to return to main menu..."
+        echo -en "Press Enter to return to main menu..."
+        read -r _
     fi
 
     # Mark that user has been onboarded

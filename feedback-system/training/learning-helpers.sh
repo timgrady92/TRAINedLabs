@@ -343,7 +343,8 @@ _elaborate_chmod() {
         echo -e "  What does ${CYAN}$mode${NC} mean in words?"
         echo -e "  ${DIM}(Think: who gets what permissions?)${NC}"
         echo
-        read -rp "  Your explanation (or Enter to skip): " explanation
+        echo -en "  Your explanation (or Enter to skip): "
+        read -r explanation
 
         if [[ -n "$explanation" ]]; then
             echo
@@ -359,7 +360,8 @@ _elaborate_find() {
     if [[ "$cmd" == *"-exec"* ]]; then
         echo -e "  Why do we need ${CYAN}{}${NC} and ${CYAN}\\;${NC} in -exec?"
         echo
-        read -rp "  Your explanation (or Enter to skip): " explanation
+        echo -en "  Your explanation (or Enter to skip): "
+        read -r explanation
 
         if [[ -n "$explanation" ]]; then
             echo
@@ -370,7 +372,8 @@ _elaborate_find() {
     elif [[ "$cmd" == *"-name"* ]]; then
         echo -e "  Why must we ${CYAN}quote${NC} the pattern in -name '*.txt'?"
         echo
-        read -rp "  Your explanation (or Enter to skip): " explanation
+        echo -en "  Your explanation (or Enter to skip): "
+        read -r explanation
 
         if [[ -n "$explanation" ]]; then
             echo
@@ -387,7 +390,8 @@ _elaborate_grep() {
     if [[ "$cmd" == *"-v"* ]]; then
         echo -e "  When would you use ${CYAN}grep -v${NC} in real work?"
         echo
-        read -rp "  Your answer (or Enter to skip): " answer
+        echo -en "  Your answer (or Enter to skip): "
+        read -r answer
 
         if [[ -n "$answer" ]]; then
             echo
@@ -761,7 +765,8 @@ run_quick_drill() {
         _get_drill_question "$topic" question answer
 
         echo -e "${YELLOW}Q$i:${NC} $question"
-        read -rp ">>> " user_answer
+        echo -en ">>> "
+        read -r user_answer
 
         if _check_drill_answer "$user_answer" "$answer"; then
             echo -e "${GREEN}✓${NC}"

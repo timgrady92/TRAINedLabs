@@ -3,6 +3,14 @@
 # Provides menu, progress bar, message box, and input widgets
 # with graceful fallback from dialog → whiptail → basic terminal
 
+# Get the directory where this script is located
+_WIDGETS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Source the theme system for consistent styling
+if [[ -f "${_WIDGETS_DIR}/theme.sh" ]]; then
+    source "${_WIDGETS_DIR}/theme.sh"
+fi
+
 # ============================================================================
 # Tool Detection
 # ============================================================================
@@ -141,7 +149,8 @@ _fallback_menu() {
     # Get selection
     local choice
     while true; do
-        read -rp "Enter choice [0-${#tags[@]}]: " choice
+        echo -en "Enter choice [0-${#tags[@]}]: "
+        read -r choice
         if [[ "$choice" == "0" || "$choice" == "q" || "$choice" == "Q" ]]; then
             return 1
         fi
@@ -218,7 +227,8 @@ _fallback_checklist() {
 
     # Get selection
     local choice
-    read -rp "Enter choices (or Enter for defaults): " choice
+    echo -en "Enter choices (or Enter for defaults): "
+    read -r choice
 
     if [[ -z "$choice" ]]; then
         # Return defaults
@@ -262,7 +272,8 @@ tui_msgbox() {
         echo
         echo -e "$message"
         echo
-        read -rp "Press Enter to continue..."
+        echo -en "Press Enter to continue..."
+        read -r _
     fi
 }
 
@@ -291,7 +302,8 @@ tui_yesno() {
         echo
         echo -e "${TUI_BOLD}$title${TUI_NC}"
         local response
-        read -rp "$question [y/N] " response
+        echo -en "$question [y/N] "
+        read -r response
         [[ "$response" =~ ^[Yy] ]] && return 0 || return 1
     fi
 }
@@ -324,10 +336,12 @@ tui_input() {
         echo -e "${TUI_BOLD}$title${TUI_NC}"
         local input
         if [[ -n "$default" ]]; then
-            read -rp "$prompt [$default]: " input
+            echo -en "$prompt [$default]: "
+            read -r input
             echo "${input:-$default}"
         else
-            read -rp "$prompt: " input
+            echo -en "$prompt: "
+            read -r input
             echo "$input"
         fi
         return 0
@@ -460,7 +474,8 @@ tui_fzf() {
         done
         echo >&2
 
-        read -rp "Enter number or search text: " input >&2
+        echo -en "Enter number or search text: " >&2
+        read -r input
 
         if [[ "$input" =~ ^[0-9]+$ ]] && [[ "$input" -ge 1 ]] && [[ "$input" -le "${#lines[@]}" ]]; then
             echo "${lines[$((input-1))]}"

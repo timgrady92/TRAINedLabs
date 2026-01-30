@@ -191,7 +191,8 @@ launch_exam() {
     "${FEEDBACK_DIR}/lpic-check" "${args[@]}" || true
 
     echo
-    read -rp "Press Enter to return to menu..."
+    echo -en "Press Enter to return to menu..."
+    read -r _
 }
 
 # ============================================================================
