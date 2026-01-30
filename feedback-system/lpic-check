@@ -10,7 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OBJECTIVES_DIR="${SCRIPT_DIR}/objectives"
 
 # Configuration
-LPIC_DIR="${HOME}/.lpic1"
+LPIC_DIR="/opt/LPIC-1/data"
 DB_FILE="${LPIC_DIR}/progress.db"
 
 # Colors for output

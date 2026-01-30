@@ -162,30 +162,6 @@ verify_user_environment() {
     if [[ -n "$training_user" ]]; then
         print_pass "Training user: $training_user"
 
-        local user_home
-        user_home=$(getent passwd "$training_user" | cut -d: -f6)
-
-        # Check .lpic1 directory
-        if [[ -d "${user_home}/.lpic1" ]]; then
-            print_pass "~/.lpic1 directory exists"
-
-            # Check progress database
-            if [[ -f "${user_home}/.lpic1/progress.db" ]]; then
-                print_pass "Progress database initialized"
-            else
-                print_warn "Progress database not yet created (will initialize on first run)"
-            fi
-        else
-            print_warn "~/.lpic1 directory not found (will create on first run)"
-        fi
-
-        # Check practice files
-        if [[ -d "${user_home}/lpic1-practice" ]]; then
-            print_pass "Practice files directory exists"
-        else
-            print_warn "Practice files directory not found"
-        fi
-
         # Check sudo access
         if groups "$training_user" | grep -qw sudo; then
             print_pass "User has sudo access"
@@ -194,6 +170,27 @@ verify_user_environment() {
         fi
     else
         print_warn "No training user found (student, trainee, or lpic1)"
+    fi
+
+    # Check shared data directory
+    if [[ -d "$INSTALL_DIR/data" ]]; then
+        print_pass "Data directory exists ($INSTALL_DIR/data)"
+
+        # Check progress database
+        if [[ -f "$INSTALL_DIR/data/progress.db" ]]; then
+            print_pass "Progress database initialized"
+        else
+            print_warn "Progress database not yet created (will initialize on first run)"
+        fi
+    else
+        print_warn "Data directory not found (will create on first run)"
+    fi
+
+    # Check practice files
+    if [[ -d "$INSTALL_DIR/practice" ]]; then
+        print_pass "Practice files directory exists ($INSTALL_DIR/practice)"
+    else
+        print_warn "Practice files directory not found"
     fi
 }
 

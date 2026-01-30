@@ -313,7 +313,7 @@ random_challenge() {
 # ============================================================================
 
 show_challenge_progress() {
-    local db_file="${HOME}/.lpic1/progress.db"
+    local db_file="/opt/LPIC-1/data/progress.db"
 
     # For now, show a simple summary (could be enhanced with completion tracking)
     local text="Challenge Progress\n"

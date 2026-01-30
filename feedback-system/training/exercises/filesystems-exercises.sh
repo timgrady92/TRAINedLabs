@@ -112,7 +112,7 @@ SCENARIO:
 You've identified a full filesystem. Now you need to find which directories
 are consuming the most space. The du command shows directory sizes.
 
-Directory: ~/lpic1-practice/
+Directory: /opt/LPIC-1/practice/
 SCENARIO
 
     echo
@@ -159,7 +159,7 @@ SCENARIO
                     ;;
                 *)
                     show_solution "du -sh ."
-                    echo "Or: du -sh ~/lpic1-practice"
+                    echo "Or: du -sh /opt/LPIC-1/practice"
                     echo
                     echo "Useful du variations:"
                     echo "  du -sh *       Size of each item in current dir"

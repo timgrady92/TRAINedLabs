@@ -10,7 +10,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Configuration
-LPIC_DIR="${HOME}/.lpic1"
+LPIC_DIR="/opt/LPIC-1/data"
 DB_FILE="${LPIC_DIR}/progress.db"
 
 # Colors
@@ -374,7 +374,7 @@ validate_filesystem_lab() {
 validate_permissions_lab() {
     local checks_passed=0
     local checks_total=0
-    local practice_dir="${HOME}/lpic1-practice/permissions-lab"
+    local practice_dir="/opt/LPIC-1/practice/permissions-lab"
 
     print_header "Permissions Lab Validation"
 

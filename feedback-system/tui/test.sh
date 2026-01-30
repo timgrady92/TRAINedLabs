@@ -244,7 +244,7 @@ timed_challenge() {
 # ============================================================================
 
 view_scores() {
-    local db_file="${HOME}/.lpic1/progress.db"
+    local db_file="/opt/LPIC-1/data/progress.db"
 
     if [[ ! -f "$db_file" ]]; then
         tui_msgbox "No History" "No test history found.\n\nComplete some tests to see scores."

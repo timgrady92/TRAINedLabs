@@ -19,7 +19,7 @@ SCENARIO:
 You need to locate all text files (.txt) in the find-practice directory
 to catalog them for documentation.
 
-Directory: ~/lpic1-practice/find-practice/
+Directory: /opt/LPIC-1/practice/find-practice/
 SCENARIO
 
     echo
@@ -92,7 +92,7 @@ SCENARIO:
 You need to list all directories (not files) within the find-practice
 structure to understand the folder organization.
 
-Directory: ~/lpic1-practice/find-practice/
+Directory: /opt/LPIC-1/practice/find-practice/
 SCENARIO
 
     echo
@@ -167,7 +167,7 @@ SCENARIO:
 You're investigating disk usage and need to find files larger than
 1 megabyte in the find-practice directory.
 
-Directory: ~/lpic1-practice/find-practice/
+Directory: /opt/LPIC-1/practice/find-practice/
 SCENARIO
 
     echo
@@ -242,7 +242,7 @@ SCENARIO:
 You need to find all files modified within the last 7 days for a
 backup verification report.
 
-Directory: ~/lpic1-practice/
+Directory: /opt/LPIC-1/practice/
 SCENARIO
 
     echo
@@ -312,7 +312,7 @@ SCENARIO:
 You need to get detailed information (ls -l) about all .sh script files
 in the find-practice directory.
 
-Directory: ~/lpic1-practice/find-practice/
+Directory: /opt/LPIC-1/practice/find-practice/
 SCENARIO
 
     echo
@@ -385,7 +385,7 @@ SCENARIO:
 You need to find regular files (not directories) that are larger than 10KB
 in the find-practice directory.
 
-Directory: ~/lpic1-practice/find-practice/
+Directory: /opt/LPIC-1/practice/find-practice/
 SCENARIO
 
     echo

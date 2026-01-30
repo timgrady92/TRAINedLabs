@@ -18,7 +18,7 @@ log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 # Configuration
-USER_PRACTICE="${HOME}/lpic1-practice"
+USER_PRACTICE="/opt/LPIC-1/practice"
 
 # Parse arguments
 RESET=false

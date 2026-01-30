@@ -29,7 +29,7 @@ source "${TUI_DIR}/widgets.sh"
 source "${TRAINING_DIR}/common.sh"
 
 # Configuration
-LPIC_DIR="${HOME}/.lpic1"
+LPIC_DIR="/opt/LPIC-1/data"
 DB_FILE="${LPIC_DIR}/progress.db"
 
 # ============================================================================

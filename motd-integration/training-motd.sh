@@ -3,7 +3,7 @@
 # Shows prominent call-to-action and progress tracking
 
 # Configuration
-LPIC_DIR="${HOME}/.lpic1"
+LPIC_DIR="/opt/LPIC-1/data"
 DB_FILE="${LPIC_DIR}/progress.db"
 FIRST_LOGIN_FILE="${LPIC_DIR}/.first-login-shown"
 

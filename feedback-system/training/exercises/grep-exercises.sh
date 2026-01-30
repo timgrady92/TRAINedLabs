@@ -27,7 +27,7 @@ SCENARIO:
 You're investigating system issues and need to find all error messages
 in the system log. The errors might be written as "error", "Error", or "ERROR".
 
-File: ~/lpic1-practice/logs/system.log
+File: /opt/LPIC-1/practice/logs/system.log
 
 WHY THIS MATTERS:
 Log analysis is a daily task for sysadmins. Case-insensitive search
@@ -141,7 +141,7 @@ SCENARIO:
 You're reviewing user accounts. You need to find all users who CAN log in
 (users whose shell is NOT /usr/sbin/nologin or /usr/sbin/nologin).
 
-File: ~/lpic1-practice/text/users.txt
+File: /opt/LPIC-1/practice/text/users.txt
 SCENARIO
 
     echo
@@ -217,7 +217,7 @@ SCENARIO:
 You need to report how many SSH-related events are in the system log.
 Rather than counting manually, use grep's counting feature.
 
-File: ~/lpic1-practice/logs/system.log
+File: /opt/LPIC-1/practice/logs/system.log
 SCENARIO
 
     echo
@@ -289,7 +289,7 @@ SCENARIO:
 You found errors in a log file and need to know exactly which line numbers
 they're on so you can reference them in a bug report.
 
-File: ~/lpic1-practice/logs/system.log
+File: /opt/LPIC-1/practice/logs/system.log
 SCENARIO
 
     echo
@@ -361,7 +361,7 @@ SCENARIO:
 You need to find log entries related to either 'error' OR 'warning'.
 Use extended regex to match multiple patterns in one command.
 
-File: ~/lpic1-practice/logs/system.log
+File: /opt/LPIC-1/practice/logs/system.log
 SCENARIO
 
     echo
@@ -432,7 +432,7 @@ SCENARIO:
 You need to search for the word "password" across all files in the configs
 directory to audit for any hardcoded credentials.
 
-Directory: ~/lpic1-practice/configs/
+Directory: /opt/LPIC-1/practice/configs/
 SCENARIO
 
     echo

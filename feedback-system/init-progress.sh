@@ -18,7 +18,7 @@ log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 # Configuration
-LPIC_DIR="${HOME}/.lpic1"
+LPIC_DIR="/opt/LPIC-1/data"
 DB_FILE="${LPIC_DIR}/progress.db"
 SNAPSHOT_DIR="${LPIC_DIR}/snapshots"
 

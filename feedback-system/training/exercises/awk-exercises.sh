@@ -21,7 +21,7 @@ SCENARIO:
 You need to extract usernames from the /etc/passwd-style file.
 The username is the first field, separated by colons (:).
 
-File: ~/lpic1-practice/text/users.txt
+File: /opt/LPIC-1/practice/text/users.txt
 SCENARIO
 
     echo
@@ -93,7 +93,7 @@ SCENARIO:
 You need a report showing username and their shell (fields 1 and 7)
 from the passwd-style file.
 
-File: ~/lpic1-practice/text/users.txt
+File: /opt/LPIC-1/practice/text/users.txt
 SCENARIO
 
     echo
@@ -161,7 +161,7 @@ exercise_awk_pattern() {
 SCENARIO:
 You need to find all servers running Ubuntu from the server inventory.
 
-File: ~/lpic1-practice/text/servers.txt
+File: /opt/LPIC-1/practice/text/servers.txt
 SCENARIO
 
     echo
@@ -230,7 +230,7 @@ SCENARIO:
 You need to find employees with salary greater than 70000.
 The salary is in the 5th field.
 
-File: ~/lpic1-practice/text/awk-practice/employees.dat
+File: /opt/LPIC-1/practice/text/awk-practice/employees.dat
 SCENARIO
 
     echo
@@ -299,7 +299,7 @@ SCENARIO:
 You need to calculate the total quantity sold from the sales data.
 The quantity is in column 3 (after the header line).
 
-File: ~/lpic1-practice/text/sales.csv (comma-separated)
+File: /opt/LPIC-1/practice/text/sales.csv (comma-separated)
 SCENARIO
 
     echo

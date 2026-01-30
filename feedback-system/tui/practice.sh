@@ -177,7 +177,7 @@ launch_practice() {
 # ============================================================================
 
 practice_weak_areas() {
-    local db_file="${HOME}/.lpic1/progress.db"
+    local db_file="/opt/LPIC-1/data/progress.db"
 
     if [[ ! -f "$db_file" ]]; then
         tui_msgbox "No Data" "No practice history found.\n\nComplete some exercises first to identify weak areas."

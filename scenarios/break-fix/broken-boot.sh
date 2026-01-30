@@ -34,7 +34,7 @@ print_info() { echo -e "${CYAN}${INFO}${NC} $1"; }
 print_header() { echo -e "\n${BOLD}═══ $1 ═══${NC}\n"; }
 
 # Configuration
-SNAPSHOT_DIR="${HOME}/.lpic1/snapshots"
+SNAPSHOT_DIR="/opt/LPIC-1/data/snapshots"
 SCENARIO_NAME="broken-boot"
 
 # Check root

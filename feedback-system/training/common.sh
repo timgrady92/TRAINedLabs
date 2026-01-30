@@ -35,9 +35,9 @@ else
 fi
 
 # Configuration
-LPIC_DIR="${HOME}/.lpic1"
+LPIC_DIR="/opt/LPIC-1/data"
 DB_FILE="${LPIC_DIR}/progress.db"
-PRACTICE_DIR="${HOME}/lpic1-practice"
+PRACTICE_DIR="/opt/LPIC-1/practice"
 
 # ============================================================================
 # Output Functions
@@ -447,10 +447,10 @@ HAS_GUM=""
 HAS_FZF=""
 
 _detect_tui_tools() {
-    command -v dialog &>/dev/null && HAS_DIALOG="1"
-    command -v whiptail &>/dev/null && HAS_WHIPTAIL="1"
-    command -v gum &>/dev/null && HAS_GUM="1"
-    command -v fzf &>/dev/null && HAS_FZF="1"
+    command -v dialog &>/dev/null && HAS_DIALOG="1" || true
+    command -v whiptail &>/dev/null && HAS_WHIPTAIL="1" || true
+    command -v gum &>/dev/null && HAS_GUM="1" || true
+    command -v fzf &>/dev/null && HAS_FZF="1" || true
 }
 
 # Call detection once when sourced

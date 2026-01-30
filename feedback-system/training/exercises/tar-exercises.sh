@@ -24,7 +24,7 @@ SCENARIO:
 You need to back up the text directory before making changes.
 Create a compressed archive using gzip compression.
 
-Directory: ~/lpic1-practice/text/
+Directory: /opt/LPIC-1/practice/text/
 
 WHY THIS MATTERS:
 Compressed backups are essential for system administration.
@@ -122,7 +122,7 @@ SCENARIO:
 You need to create a highly compressed archive for long-term storage.
 Bzip2 typically provides better compression than gzip (but is slower).
 
-Directory: ~/lpic1-practice/logs/
+Directory: /opt/LPIC-1/practice/logs/
 SCENARIO
 
     echo
@@ -196,7 +196,7 @@ SCENARIO:
 You've received an archive and need to see what's inside WITHOUT extracting it.
 This is a common safety practice before extracting unknown archives.
 
-File: ~/lpic1-practice/test-archive.tar.gz
+File: /opt/LPIC-1/practice/test-archive.tar.gz
 SCENARIO
 
     echo
@@ -275,8 +275,8 @@ SCENARIO:
 You need to restore a backup to a specific location rather than
 the current directory. This is crucial for disaster recovery.
 
-Archive: ~/lpic1-practice/extract-test.tar.gz
-Target:  ~/lpic1-practice/restore-target/
+Archive: /opt/LPIC-1/practice/extract-test.tar.gz
+Target:  /opt/LPIC-1/practice/restore-target/
 SCENARIO
 
     echo
@@ -359,7 +359,7 @@ SCENARIO:
 You have a large backup archive but only need to restore ONE specific file.
 Extracting the entire archive would waste time and disk space.
 
-Archive: ~/lpic1-practice/single-extract.tar.gz
+Archive: /opt/LPIC-1/practice/single-extract.tar.gz
 You need: text/users.txt (only this file!)
 SCENARIO
 
@@ -439,7 +439,7 @@ SCENARIO:
 You need maximum compression for archival storage. XZ provides
 the best compression ratio (but is slower than gzip/bzip2).
 
-Directory: ~/lpic1-practice/configs/
+Directory: /opt/LPIC-1/practice/configs/
 
 EXAM NOTE: xz compression uses -J flag (capital J).
 SCENARIO

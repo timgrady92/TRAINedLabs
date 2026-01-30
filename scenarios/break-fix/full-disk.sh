@@ -36,8 +36,8 @@ print_info() { echo -e "${CYAN}${INFO}${NC} $1"; }
 print_header() { echo -e "\n${BOLD}═══ $1 ═══${NC}\n"; }
 
 # Configuration
-PRACTICE_DIR="${HOME}/lpic1-practice/disk-scenario"
-SNAPSHOT_DIR="${HOME}/.lpic1/snapshots"
+PRACTICE_DIR="/opt/LPIC-1/practice/disk-scenario"
+SNAPSHOT_DIR="/opt/LPIC-1/data/snapshots"
 SCENARIO_NAME="full-disk"
 
 # Available scenarios

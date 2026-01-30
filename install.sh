@@ -423,6 +423,13 @@ install_platform() {
     # Create command symlink
     ln -sf "$INSTALL_DIR/lpic1" /usr/local/bin/lpic1
     log_success "Created /usr/local/bin/lpic1 symlink"
+
+    # Create data and practice directories
+    mkdir -p "$INSTALL_DIR/data"
+    mkdir -p "$INSTALL_DIR/data/snapshots"
+    mkdir -p "$INSTALL_DIR/practice"
+    chmod 755 "$INSTALL_DIR/data" "$INSTALL_DIR/practice"
+    log_success "Created data and practice directories"
 }
 
 # ============================================================================
@@ -431,29 +438,41 @@ install_platform() {
 init_user_environment() {
     log_step "Setting Up User Environment"
 
-    # Create user's progress directory
-    local USER_LPIC_DIR="${TARGET_HOME}/.lpic1"
-    mkdir -p "$USER_LPIC_DIR"
-    chown "$TARGET_USER:$TARGET_USER" "$USER_LPIC_DIR"
-    log_success "Created $USER_LPIC_DIR"
+    # Migrate existing user data if present (from old ~/.lpic1 location)
+    if [[ -f "${TARGET_HOME}/.lpic1/progress.db" ]] && [[ ! -f "$INSTALL_DIR/data/progress.db" ]]; then
+        log_info "Migrating existing progress data from ${TARGET_HOME}/.lpic1..."
+        cp "${TARGET_HOME}/.lpic1/progress.db" "$INSTALL_DIR/data/"
+        if [[ -d "${TARGET_HOME}/.lpic1/snapshots" ]]; then
+            cp -r "${TARGET_HOME}/.lpic1/snapshots"/* "$INSTALL_DIR/data/snapshots/" 2>/dev/null || true
+        fi
+        log_success "Progress data migrated"
+        log_info "Old data directory ${TARGET_HOME}/.lpic1 can be removed manually"
+    fi
 
-    # Initialize progress database
+    # Initialize progress database (data goes to /opt/LPIC-1/data)
     log_info "Initializing progress tracking..."
     if [[ -f "$INSTALL_DIR/feedback-system/init-progress.sh" ]]; then
-        sudo -u "$TARGET_USER" bash "$INSTALL_DIR/feedback-system/init-progress.sh" </dev/null 2>&1 | tee -a "$LOG_FILE" || {
+        bash "$INSTALL_DIR/feedback-system/init-progress.sh" </dev/null 2>&1 | tee -a "$LOG_FILE" || {
             log_warn "Progress initialization had issues, will initialize on first run"
         }
     fi
-    log_success "Progress database initialized"
+    log_success "Progress database initialized at $INSTALL_DIR/data/"
 
-    # Create practice files
+    # Create practice files (data goes to /opt/LPIC-1/practice)
     log_info "Creating practice files..."
     if [[ -f "$INSTALL_DIR/environment/seed-data.sh" ]]; then
-        sudo -u "$TARGET_USER" bash "$INSTALL_DIR/environment/seed-data.sh" 2>&1 | tee -a "$LOG_FILE" || {
+        bash "$INSTALL_DIR/environment/seed-data.sh" 2>&1 | tee -a "$LOG_FILE" || {
             log_warn "Practice file creation had issues"
         }
     fi
-    log_success "Practice files created at ${TARGET_HOME}/lpic1-practice/"
+    log_success "Practice files created at $INSTALL_DIR/practice/"
+
+    # Set appropriate permissions for data directory (allow all users to write)
+    chmod 777 "$INSTALL_DIR/data"
+    chmod 666 "$INSTALL_DIR/data/progress.db" 2>/dev/null || true
+    chmod 777 "$INSTALL_DIR/data/snapshots"
+    chmod 755 "$INSTALL_DIR/practice"
+    log_success "Permissions set for shared access"
 }
 
 # ============================================================================
@@ -677,8 +696,8 @@ main() {
     echo "  • Training platform at $INSTALL_DIR"
     echo "  • Command: lpic1"
     echo "  • User: $TARGET_USER (password: $TARGET_PASSWORD)"
-    echo "  • Progress tracking at ${TARGET_HOME}/.lpic1"
-    echo "  • Practice files at ${TARGET_HOME}/lpic1-practice/"
+    echo "  • Progress tracking at $INSTALL_DIR/data/"
+    echo "  • Practice files at $INSTALL_DIR/practice/"
     if [[ "$SKIP_FILESYSTEMS" != true ]]; then
         echo "  • Practice filesystems at $MOUNT_BASE/"
     fi

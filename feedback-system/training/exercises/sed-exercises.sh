@@ -21,7 +21,7 @@ SCENARIO:
 You need to replace 'localhost' with '127.0.0.1' in a configuration file.
 Show the result without modifying the original file.
 
-File: ~/lpic1-practice/text/sed-practice/config.ini
+File: /opt/LPIC-1/practice/text/sed-practice/config.ini
 SCENARIO
 
     echo
@@ -91,7 +91,7 @@ SCENARIO:
 A config file has multiple occurrences of 'localhost' on some lines.
 You need to replace ALL occurrences, not just the first one per line.
 
-File: ~/lpic1-practice/text/sed-practice/config.ini
+File: /opt/LPIC-1/practice/text/sed-practice/config.ini
 SCENARIO
 
     echo
@@ -156,7 +156,7 @@ SCENARIO:
 You want to view a crontab file without comment lines (lines starting with #).
 Delete all lines that begin with #.
 
-File: ~/lpic1-practice/configs/sample-crontab
+File: /opt/LPIC-1/practice/configs/sample-crontab
 SCENARIO
 
     echo
@@ -225,7 +225,7 @@ SCENARIO:
 You need to see only lines 5 through 10 of a file.
 Use sed to print only those specific lines.
 
-File: ~/lpic1-practice/text/users.txt
+File: /opt/LPIC-1/practice/text/users.txt
 SCENARIO
 
     echo
@@ -294,7 +294,7 @@ SCENARIO:
 A text file has multiple empty lines that you want to remove
 to clean up the output.
 
-File: ~/lpic1-practice/text/sed-practice/messy-text.txt
+File: /opt/LPIC-1/practice/text/sed-practice/messy-text.txt
 SCENARIO
 
     echo

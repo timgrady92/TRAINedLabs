@@ -252,7 +252,7 @@ search_by_command() {
 # ============================================================================
 
 continue_recent() {
-    local db_file="${HOME}/.lpic1/progress.db"
+    local db_file="/opt/LPIC-1/data/progress.db"
 
     if [[ ! -f "$db_file" ]]; then
         tui_msgbox "No History" "No lesson history found.\n\nStart a new lesson to build history."
