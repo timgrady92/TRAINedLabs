@@ -2,7 +2,9 @@
 
 A hands-on training environment for LPIC-1 Linux certification with interactive lessons, guided exercises, and progress tracking.
 
-## Quick Start (Hospital Deployment)
+> **New here?** See the [Initial Setup Guide](SETUP.md) for detailed step-by-step installation instructions.
+
+## Quick Start
 
 For deploying on a fresh Ubuntu 24.04 VM:
 
