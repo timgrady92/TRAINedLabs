@@ -1,0 +1,94 @@
+Screen {
+    background: #0e1116;
+    color: #e7e7e7;
+}
+
+#body {
+    height: 1fr;
+}
+
+#nav {
+    width: 22;
+    padding: 1;
+    border: tall #27313c;
+    background: #121721;
+}
+
+#main {
+    width: 1fr;
+    padding: 1 2;
+    border: tall #27313c;
+    background: #0e1116;
+}
+
+#context {
+    width: 28;
+    padding: 1;
+    border: tall #27313c;
+    background: #121721;
+}
+
+.view-title {
+    text-style: bold;
+    color: #b4d9ff;
+    margin-bottom: 1;
+}
+
+.view-subtitle {
+    color: #9aa9ba;
+    margin-bottom: 1;
+}
+
+.panel-title {
+    color: #7fb8ff;
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+.button-row {
+    height: auto;
+    margin-top: 1;
+}
+
+#content {
+    height: 1fr;
+}
+
+#console {
+    height: 14;
+    border: tall #27313c;
+    background: #0b0e13;
+    padding: 1;
+}
+
+#console-log {
+    height: 1fr;
+    background: #0b0e13;
+}
+
+#console-input {
+    margin-top: 1;
+    border: tall #27313c;
+}
+
+#activity-log {
+    height: 1fr;
+}
+
+ListView > ListItem {
+    padding: 0 1;
+}
+
+ListView > ListItem.--highlight {
+    background: #1f2833;
+    color: #e7f1ff;
+}
+
+Button {
+    background: #1b2632;
+    border: tall #2a3a4a;
+}
+
+Button:hover {
+    background: #233244;
+}

@@ -1,0 +1,53 @@
+Screen {
+    background: #0f1116;
+    color: #e6e6e6;
+}
+
+#body {
+    height: 1fr;
+}
+
+#nav {
+    width: 24;
+    padding: 1;
+    border: tall #2f3a45;
+    background: #141820;
+}
+
+#main {
+    width: 1fr;
+    padding: 1 2;
+    border: tall #2f3a45;
+    background: #0f1116;
+}
+
+#context {
+    width: 28;
+    padding: 1;
+    border: tall #2f3a45;
+    background: #141820;
+}
+
+.panel-title {
+    color: #7db9f4;
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+#main-title {
+    text-style: bold;
+    color: #b7d7ff;
+    margin-bottom: 1;
+}
+
+#command-input {
+    margin-top: 1;
+    border: tall #2f3a45;
+}
+
+#status {
+    height: 3;
+    padding: 1 2;
+    background: #1a202a;
+    color: #9ad1a2;
+}
